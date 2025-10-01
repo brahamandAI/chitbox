@@ -1,0 +1,85 @@
+# ChitBox Production Environment Configuration
+
+# ===========================================
+# DATABASE CONFIGURATION
+# ===========================================
+
+# Option 1: Full connection string (recommended)
+DATABASE_URL=postgresql://username:password@host:port/database
+
+# Option 2: Individual components
+DB_HOST=your-production-host.com
+DB_PORT=5432
+DB_NAME=chitbox_production
+DB_USER=chitbox_prod_user
+DB_PASSWORD=your-super-secure-production-password
+
+# ===========================================
+# SERVER CONFIGURATION
+# ===========================================
+PORT=3001
+NODE_ENV=production
+
+# ===========================================
+# SMTP CONFIGURATION (Email Sending)
+# ===========================================
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@yourdomain.com
+SMTP_PASS=your-app-specific-password
+SMTP_FROM=ChitBox <noreply@yourdomain.com>
+
+# ===========================================
+# SECURITY
+# ===========================================
+# Generate a strong JWT secret (32+ characters)
+JWT_SECRET=your-super-secure-jwt-secret-for-production-change-this
+
+# CORS configuration for production
+CORS_ORIGIN=https://yourdomain.com
+
+# ===========================================
+# AI CONFIGURATION (Optional)
+# ===========================================
+OPENAI_API_KEY=sk-your-openai-api-key-here
+
+# ===========================================
+# CLOUD PROVIDER EXAMPLES
+# ===========================================
+
+# Supabase Example:
+# DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
+# DB_HOST=db.[PROJECT-REF].supabase.co
+# DB_PORT=5432
+# DB_NAME=postgres
+# DB_USER=postgres
+# DB_PASSWORD=[YOUR-PASSWORD]
+
+# Railway Example:
+# DATABASE_URL=postgresql://postgres:[PASSWORD]@[HOST]:[PORT]/railway
+# (Railway provides DATABASE_URL automatically)
+
+# Neon Example:
+# DATABASE_URL=postgresql://[USER]:[PASSWORD]@[HOST]/[DATABASE]?sslmode=require
+
+# AWS RDS Example:
+# DATABASE_URL=postgresql://username:password@your-rds-endpoint.region.rds.amazonaws.com:5432/chitbox
+# DB_HOST=your-rds-endpoint.region.rds.amazonaws.com
+# DB_PORT=5432
+# DB_NAME=chitbox
+# DB_USER=username
+# DB_PASSWORD=password
+
+# ===========================================
+# PRODUCTION SECURITY CHECKLIST
+# ===========================================
+# ✅ Use strong, unique passwords (20+ characters)
+# ✅ Enable SSL/TLS for database connections
+# ✅ Restrict database access by IP when possible
+# ✅ Use environment variables for all secrets
+# ✅ Regular security updates
+# ✅ Monitor database performance
+# ✅ Set up automated backups
+# ✅ Use connection pooling
+# ✅ Enable database logging
+# ✅ Set up monitoring and alerts

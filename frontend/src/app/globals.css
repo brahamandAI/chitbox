@@ -1,0 +1,254 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateY(-100px) translateX(50px);
+    opacity: 0.8;
+  }
+}
+
+@keyframes gradient {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-float {
+  animation: float linear infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 3s ease infinite;
+}
+
+@layer base {
+  :root {
+    --background: 222.2 84% 4.9%;
+    --foreground: 0 0% 100%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 0 0% 100%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 45 93% 47%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
+    --radius: 0.5rem;
+    --gold: 45 93% 47%;
+    --gold-foreground: 0 0% 100%;
+    --notification: 45 93% 47%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 0 0% 100%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 0 0% 100%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 45 93% 47%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-slate-900 text-white;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  html {
+    @apply bg-slate-900;
+  }
+}
+
+@layer components {
+  /* Sidebar Container */
+  .sidebar-container {
+    @apply bg-slate-800 border-r border-slate-700 h-full flex flex-col;
+  }
+  
+  /* Main Content */
+  .main-content {
+    @apply bg-slate-900 text-white;
+  }
+  
+  /* Text Colors */
+  .text-primary {
+    @apply text-white;
+  }
+  
+  .text-secondary {
+    @apply text-yellow-400;
+  }
+  
+  .text-muted {
+    @apply text-slate-400;
+  }
+  
+  /* Notification Colors - Better visibility */
+  .text-notification {
+    @apply text-blue-400;
+  }
+  
+  .bg-notification {
+    @apply bg-blue-500;
+  }
+  
+  .border-notification {
+    @apply border-blue-400;
+  }
+  
+  .notification-primary {
+    @apply bg-blue-500 text-white;
+  }
+  
+  .notification-badge {
+    @apply bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full;
+  }
+  
+  .notification-secondary {
+    @apply bg-green-500 text-white;
+  }
+  
+  .notification-accent {
+    @apply bg-purple-500 text-white;
+  }
+  
+  /* Button Styles */
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white;
+  }
+  
+  .btn-secondary {
+    @apply bg-slate-700 hover:bg-slate-600 text-white;
+  }
+  
+  /* Card Styles */
+  .card {
+    @apply bg-slate-800 border border-slate-700 text-white;
+  }
+  
+  .card-hover {
+    @apply hover:bg-slate-700 hover:border-slate-600;
+  }
+  
+  /* Input Styles */
+  .input {
+    @apply bg-slate-800 border-slate-700 text-white placeholder-slate-400;
+  }
+  
+  /* Prose Styles */
+  .prose {
+    @apply text-slate-300;
+  }
+  
+  .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+    @apply text-white;
+  }
+  
+  .prose p {
+    @apply text-slate-300;
+  }
+  
+  .prose a {
+    @apply text-blue-400;
+  }
+  
+  .prose blockquote {
+    @apply border-slate-600 bg-slate-800;
+  }
+  
+  .prose code {
+    @apply bg-slate-800 text-slate-300;
+  }
+}
+
+@layer utilities {
+  /* Force dark theme on all elements */
+  .dark-theme {
+    @apply bg-slate-900 text-white;
+  }
+  
+  .dark-theme * {
+    @apply text-white;
+  }
+  
+  .dark-theme h1, .dark-theme h2, .dark-theme h3, .dark-theme h4, .dark-theme h5, .dark-theme h6 {
+    @apply text-white;
+  }
+  
+  .dark-theme p, .dark-theme span, .dark-theme div {
+    @apply text-slate-300;
+  }
+  
+  .dark-theme .text-gray-900 {
+    @apply text-white;
+  }
+  
+  .dark-theme .text-gray-700 {
+    @apply text-slate-300;
+  }
+  
+  .dark-theme .text-gray-500 {
+    @apply text-slate-400;
+  }
+  
+  .dark-theme .text-gray-600 {
+    @apply text-slate-400;
+  }
+  
+  .dark-theme .bg-white {
+    @apply bg-slate-800;
+  }
+  
+  .dark-theme .bg-gray-50 {
+    @apply bg-slate-800;
+  }
+  
+  .dark-theme .bg-gray-100 {
+    @apply bg-slate-700;
+  }
+  
+  .dark-theme .border-gray-200 {
+    @apply border-slate-700;
+  }
+  
+  .dark-theme .border-gray-300 {
+    @apply border-slate-600;
+  }
+}

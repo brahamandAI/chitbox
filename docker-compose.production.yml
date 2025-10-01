@@ -1,0 +1,141 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: chitbox-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: chitbox
+      POSTGRES_USER: chitbox_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./backend/src/database/migrations:/docker-entrypoint-initdb.d/migrations
+    ports:
+      - "5432:5432"
+    networks:
+      - chitbox-network
+
+  # Redis for session storage and caching
+  redis:
+    image: redis:7-alpine
+    container_name: chitbox-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - chitbox-network
+
+  # SMTP Server (Postfix)
+  postfix:
+    image: catatnight/postfix:latest
+    container_name: chitbox-postfix
+    restart: unless-stopped
+    environment:
+      maildomain: chitbox.co
+      smtp_user: noreply:${SMTP_PASSWORD}
+      smtp_relayhost: ""
+    ports:
+      - "25:25"
+      - "587:587"
+    volumes:
+      - ./smtp/postfix.conf:/etc/postfix/main.cf:ro
+      - ./smtp/sasl:/etc/postfix/sasl:ro
+    networks:
+      - chitbox-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.production
+    container_name: chitbox-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://chitbox_user:${DB_PASSWORD}@postgres:5432/chitbox
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: chitbox
+      DB_USER: chitbox_user
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      SMTP_HOST: postfix
+      SMTP_PORT: 587
+      SMTP_USER: noreply@chitbox.co
+      SMTP_PASS: ${SMTP_PASSWORD}
+      SMTP_FROM: ChitBox <noreply@chitbox.co>
+      CORS_ORIGIN: https://chitbox.co
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+      - redis
+      - postfix
+    volumes:
+      - ./uploads:/app/uploads
+    networks:
+      - chitbox-network
+
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.production
+    container_name: chitbox-frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: https://chitbox.co/api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - chitbox-network
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: chitbox-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - chitbox-network
+
+  # Monitoring with Uptime Kuma
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: chitbox-uptime
+    restart: unless-stopped
+    volumes:
+      - uptime_data:/app/data
+    ports:
+      - "3002:3001"
+    networks:
+      - chitbox-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  uptime_data:
+
+networks:
+  chitbox-network:
+    driver: bridge
