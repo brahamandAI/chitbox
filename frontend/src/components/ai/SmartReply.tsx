@@ -12,8 +12,6 @@ interface SmartReplyProps {
 }
 
 export function SmartReply({ 
-  emailContent, 
-  senderName, 
   onReplySelect, 
   className 
 }: SmartReplyProps) {

@@ -14,8 +14,7 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-  Type,
-  Palette
+  Type
 } from 'lucide-react';
 import { Button } from './button';
 

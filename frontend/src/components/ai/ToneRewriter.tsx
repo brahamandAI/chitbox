@@ -69,7 +69,7 @@ export function ToneRewriter({
               key={tone.key}
               variant={selectedTone === tone.key ? "default" : "outline"}
               size="sm"
-              onClick={() => setSelectedTone(tone.key as any)}
+              onClick={() => setSelectedTone(tone.key as 'professional' | 'friendly' | 'concise')}
               className={`${
                 selectedTone === tone.key
                   ? 'bg-purple-500 text-white'

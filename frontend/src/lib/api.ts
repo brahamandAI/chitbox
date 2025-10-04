@@ -1,3 +1,5 @@
+import { Attachment } from '@/types';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 class ApiClient {
@@ -147,7 +149,7 @@ class ApiClient {
     bcc?: string | string[];
     subject: string;
     body: { text?: string; html?: string } | string;
-    attachments?: any[];
+    attachments?: Attachment[];
   }) {
     return this.request('/mail/send', {
       method: 'POST',

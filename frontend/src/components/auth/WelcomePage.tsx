@@ -7,15 +7,10 @@ import {
   Mail, 
   Sparkles, 
   ArrowRight,
-  Star,
   Zap,
   Shield,
-  Users,
-  MessageSquare,
-  FileText,
   Wand2,
-  Heart,
-  Gift
+  Heart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -27,10 +22,10 @@ interface WelcomePageProps {
 }
 
 export function WelcomePage({ userName, userEmail, onContinue, className }: WelcomePageProps) {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [, setCurrentStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  const features = [
+  const _features = [
     {
       icon: Mail,
       title: 'Smart Email Management',
@@ -99,7 +94,7 @@ export function WelcomePage({ userName, userEmail, onContinue, className }: Welc
       clearTimeout(timer);
       clearInterval(stepTimer);
     };
-  }, []);
+  }, [welcomeSteps.length]);
 
   return (
     <div className={cn("min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900 flex items-center justify-center p-4 relative overflow-hidden", className)}>

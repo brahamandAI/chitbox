@@ -10,26 +10,23 @@ import {
   Italic, 
   Underline,
   Link,
-  Smile,
   Image,
   FileText,
-  Sparkles,
   Wand2,
-  Type,
-  Palette
+  Type
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { SmartCompose } from '../ai/SmartCompose';
 import { ToneRewriter } from '../ai/ToneRewriter';
+import { SendEmailRequest } from '@/types';
 
 interface ComposeMailProps {
   isOpen: boolean;
   onClose: () => void;
-  onSend: (email: any) => void;
-  replyTo?: any;
+  onSend: (email: SendEmailRequest) => void;
+  replyTo?: {to: string; subject: string; body: string};
   className?: string;
 }
 
@@ -40,9 +37,8 @@ export function ComposeMail({
   replyTo,
   className
 }: ComposeMailProps) {
-  const [to, setTo] = useState(replyTo?.fromEmail || '');
-  const [subject, setSubject] = useState(replyTo ? `Re: ${replyTo.subject}` : '');
-  const [body, setBody] = useState(replyTo?.suggestedReply || '');
+  const [subject, setSubject] = useState(replyTo?.subject || '');
+  const [body, setBody] = useState(replyTo?.body || '');
   const [isMinimized, setIsMinimized] = useState(false);
   const [showToneRewriter, setShowToneRewriter] = useState(false);
   const [showFormatting, setShowFormatting] = useState(false);
@@ -54,17 +50,16 @@ export function ComposeMail({
   // Update form when replyTo changes (for smart reply)
   React.useEffect(() => {
     if (replyTo) {
-      const recipientEmail = replyTo.fromEmail || '';
-      setTo(recipientEmail);
+      const recipientEmail = replyTo.to || '';
       if (recipientEmail && !recipients.includes(recipientEmail)) {
         setRecipients([recipientEmail]);
       }
-      setSubject(replyTo.subject ? `Re: ${replyTo.subject}` : '');
-      if (replyTo.suggestedReply) {
-        setBody(replyTo.suggestedReply);
+      setSubject(replyTo.subject || '');
+      if (replyTo.body) {
+        setBody(replyTo.body);
       }
     }
-  }, [replyTo]);
+  }, [replyTo, recipients]);
 
   const handleSend = async () => {
     if (recipients.length === 0 || !subject || !body) return;
@@ -75,7 +70,7 @@ export function ComposeMail({
         to: recipients.join(', '),
         subject,
         body,
-        attachments
+        attachments: attachments.map(file => ({ filename: file.name, originalName: file.name, mimeType: file.type, fileSize: file.size, filePath: "", id: 0, messageId: 0, createdAt: new Date().toISOString() }))
       });
       
       // Reset form
@@ -305,7 +300,7 @@ export function ComposeMail({
                 htmlFor="image-upload"
                 className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-slate-300 hover:text-green-400 hover:bg-slate-700 cursor-pointer transition-colors"
               >
-                <Image className="w-4 h-4 mr-2" />
+                <Image className="w-4 h-4 mr-2" aria-label="Upload image" />
                 Image
               </label>
 

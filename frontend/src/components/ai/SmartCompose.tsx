@@ -13,7 +13,6 @@ interface SmartComposeProps {
 
 export function SmartCompose({ 
   text, 
-  context = 'email', 
   onSuggestionSelect, 
   className 
 }: SmartComposeProps) {

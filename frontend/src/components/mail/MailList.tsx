@@ -10,14 +10,11 @@ import {
   RefreshCw, 
   Search,
   Filter,
-  MoreVertical,
-  Archive,
-  Trash2,
   MailOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MailThread, MailMessage } from '@/types';
+import { MailThread } from '@/types';
 
 interface MailListProps {
   threads: MailThread[];
@@ -62,7 +59,7 @@ export function MailList({
       if (diffInMinutes < 10080) return `${Math.floor(diffInMinutes / 1440)}d ago`;
       
       return date.toLocaleDateString();
-    } catch (error) {
+    } catch {
       return "Just now";
     }
   };
@@ -79,8 +76,8 @@ export function MailList({
 
   const filteredThreads = threads.filter(thread => {
     const matchesSearch = thread.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         thread.from?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = !filterUnread || (thread.unreadCount && thread.unreadCount > 0);
+                         thread.fromEmail?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = !filterUnread || !thread.isRead;
     return matchesSearch && matchesFilter;
   });
 
@@ -169,7 +166,7 @@ export function MailList({
                 <div className="flex items-start space-x-4">
                   {/* Avatar */}
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg flex-shrink-0">
-                    {getInitials(thread.from)}
+                    {getInitials(thread.fromName || thread.fromEmail)}
                   </div>
 
                   {/* Content */}
@@ -177,10 +174,10 @@ export function MailList({
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2">
                         <h3 className="font-semibold text-white truncate">
-                          {thread.from || 'Unknown Sender'}
+                          {thread.fromName || thread.fromEmail || 'Unknown Sender'}
                         </h3>
                         <span className="text-sm text-slate-400">to me</span>
-                        {thread.unreadCount && thread.unreadCount > 0 && (
+                        {!thread.isRead && (
                           <span className="px-2 py-0.5 text-xs font-bold text-blue-600 bg-blue-100 rounded-full">
                             New
                           </span>
@@ -188,7 +185,7 @@ export function MailList({
                       </div>
                       <div className="flex items-center space-x-2">
                         <span className="text-sm text-slate-400">
-                          {formatTime(thread.timestamp || new Date().toISOString())}
+                          {formatTime(thread.sentAt || thread.createdAt)}
                         </span>
                         <div className="flex items-center space-x-1">
                           <Button
@@ -200,7 +197,7 @@ export function MailList({
                             size="sm"
                             className="text-slate-400 hover:text-yellow-500 hover:bg-slate-600"
                           >
-                            {thread.starred ? (
+                            {thread.isStarred ? (
                               <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
                             ) : (
                               <StarOff className="w-4 h-4" />
@@ -232,10 +229,10 @@ export function MailList({
                     {/* Time and Status */}
                     <div className="flex items-center space-x-2 mt-2 text-xs text-slate-500">
                       <Clock className="w-3 h-3" />
-                      <span>{formatTime(thread.timestamp || new Date().toISOString())}</span>
-                      {thread.unreadCount && thread.unreadCount > 0 && (
+                      <span>{formatTime(thread.sentAt || thread.createdAt)}</span>
+                      {!thread.isRead && (
                         <span className="text-blue-500 font-medium">
-                          {thread.unreadCount} unread
+                          unread
                         </span>
                       )}
                     </div>

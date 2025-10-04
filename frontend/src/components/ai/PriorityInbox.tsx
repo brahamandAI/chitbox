@@ -8,10 +8,6 @@ import {
   Archive, 
   Trash2, 
   MoreVertical,
-  Clock,
-  Paperclip,
-  Reply,
-  Forward,
   Mail,
   CheckCircle2,
   Circle,
@@ -20,7 +16,6 @@ import {
   AlertTriangle,
   Heart
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { MailThread as MailThreadType } from '@/types';
 
 interface PriorityInboxProps {
@@ -107,7 +102,7 @@ export function PriorityInbox({
             return (
               <button
                 key={category.key}
-                onClick={() => setSelectedCategory(category.key as any)}
+                onClick={() => setSelectedCategory(category.key as 'all' | 'important' | 'social' | 'promotions' | 'spam')}
                 className={cn(
                   "flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   selectedCategory === category.key
@@ -189,7 +184,7 @@ export function PriorityInbox({
                       </div>
                       <div className="flex items-center space-x-2">
                         <span className="text-sm text-slate-400 font-medium">
-                          {formatTime(thread.timestamp || thread.createdAt)}
+                          {formatTime(thread.sentAt || thread.createdAt)}
                         </span>
                         <button
                           onClick={(e) => {

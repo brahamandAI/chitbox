@@ -15,15 +15,8 @@ import {
   Settings,
   Mail,
   Archive,
-  Clock,
-  Tag,
-  Zap,
   Sun,
   Moon,
-  User,
-  Bell,
-  Shield,
-  HelpCircle,
   LogOut
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';

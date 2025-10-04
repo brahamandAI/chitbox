@@ -99,7 +99,7 @@ export interface SendEmailRequest {
   bcc?: string | string[];
   subject: string;
   body: { text?: string; html?: string } | string;
-  attachments?: any[];
+  attachments?: Attachment[];
 }
 
 export interface SaveDraftRequest {
@@ -112,7 +112,7 @@ export interface SaveDraftRequest {
 }
 
 export interface SocketEvents {
-  new_email: (data: { folderId: number; email: any }) => void;
-  email_updated: (data: { folderId: number; update: any }) => void;
+  new_email: (data: { folderId: number; email: MailMessage }) => void;
+  email_updated: (data: { folderId: number; update: MailMessage }) => void;
   user_typing: (data: { userId: number; userEmail: string; threadId: number; isTyping: boolean }) => void;
 }

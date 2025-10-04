@@ -14,8 +14,7 @@ import {
   Shield,
   Calendar,
   Briefcase,
-  Globe,
-  Heart
+  Globe
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

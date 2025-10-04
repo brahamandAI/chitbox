@@ -9,7 +9,7 @@ import { User } from '@/types';
 import { authService, User as AuthUser } from '@/lib/auth';
 
 // Demo user data for immediate visual impact
-const DEMO_USER: User = {
+const _DEMO_USER: User = {
   id: 1,
   email: 'demo@chitbox.com',
   name: 'Demo User',
@@ -18,7 +18,7 @@ const DEMO_USER: User = {
 };
 
 // Demo folders
-const DEMO_FOLDERS = [
+const _DEMO_FOLDERS = [
   { id: 1, name: 'Inbox', unreadCount: 5, type: 'inbox' },
   { id: 2, name: 'Starred', unreadCount: 2, type: 'starred' },
   { id: 3, name: 'Sent', unreadCount: 0, type: 'sent' },
@@ -28,7 +28,7 @@ const DEMO_FOLDERS = [
 ];
 
 // Demo email threads
-const DEMO_THREADS = [
+const _DEMO_THREADS = [
   {
     id: 1,
     subject: 'Welcome to ChitBox - Your Modern Email Experience',
@@ -163,7 +163,7 @@ export default function HomePage() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [isNewUser, setIsNewUser] = useState(false);
+  const [, setIsNewUser] = useState(false);
 
   useEffect(() => {
     // Check if user is already authenticated
@@ -196,8 +196,9 @@ export default function HomePage() {
       setUser(response.user);
       setToken(response.token);
       setAuthView('app');
-    } catch (error: any) {
-      setAuthError(error.message || 'Login failed. Please try again.');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.';
+      setAuthError(errorMessage);
     }
   };
 
@@ -209,8 +210,9 @@ export default function HomePage() {
       setToken(response.token);
       setIsNewUser(true);
       setAuthView('welcome');
-    } catch (error: any) {
-      setAuthError(error.message || 'Registration failed. Please try again.');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.';
+      setAuthError(errorMessage);
     }
   };
 
@@ -331,7 +333,7 @@ export default function HomePage() {
       onLogin={handleLogin}
       onSwitchToRegister={handleSwitchToRegister}
       onBack={handleBackToApp}
-      error={authError}
+      error={authError || undefined}
       className="min-h-screen"
     />
   );

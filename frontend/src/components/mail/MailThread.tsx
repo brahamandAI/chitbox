@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { cn } from '@/lib/utils';
 import { 
   ArrowLeft, 
@@ -28,7 +28,6 @@ interface MailThreadProps {
   onReply: (message: MailMessage) => void;
   onForward: (message: MailMessage) => void;
   onStarToggle: (messageId: number) => void;
-  onMarkAsRead: (messageId: number) => void;
   onBack: () => void;
   className?: string;
 }
@@ -39,11 +38,9 @@ export function MailThread({
   onReply,
   onForward,
   onStarToggle,
-  onMarkAsRead,
   onBack,
   className
 }: MailThreadProps) {
-  const [selectedMessageId, setSelectedMessageId] = useState<number | null>(null);
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -110,11 +107,7 @@ export function MailThread({
               size="sm"
               className="text-slate-400 hover:text-yellow-500 hover:bg-slate-700"
             >
-              {latestMessage.starred ? (
-                <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-              ) : (
-                <StarOff className="w-4 h-4" />
-              )}
+              <StarOff className="w-4 h-4" />
             </Button>
             <Button
               variant="ghost"
@@ -130,11 +123,11 @@ export function MailThread({
         <div className="flex items-center space-x-4 text-sm text-slate-400">
           <div className="flex items-center space-x-2">
             <User className="w-4 h-4" />
-            <span>From: {latestMessage.from}</span>
+            <span>From: {latestMessage.fromName || latestMessage.fromEmail}</span>
           </div>
           <div className="flex items-center space-x-2">
             <Clock className="w-4 h-4" />
-            <span>{formatTime(latestMessage.timestamp)}</span>
+            <span>{formatTime(latestMessage.sentAt || latestMessage.createdAt)}</span>
           </div>
         </div>
       </div>
@@ -162,11 +155,11 @@ export function MailThread({
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-start space-x-4">
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
-                  {getInitials(message.from)}
+                  {getInitials(message.fromName || message.fromEmail)}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-1">
-                    <h3 className="font-semibold text-white">{message.from}</h3>
+                    <h3 className="font-semibold text-white">{message.fromName || message.fromEmail}</h3>
                     <span className="text-sm text-slate-400">to me</span>
                     <span className="px-2 py-0.5 text-xs font-bold text-blue-600 bg-blue-100 rounded-full">
                       New
@@ -174,7 +167,7 @@ export function MailThread({
                   </div>
                   <div className="flex items-center space-x-2 text-sm text-slate-400">
                     <Clock className="w-4 h-4" />
-                    <span>{formatTime(message.timestamp)}</span>
+                    <span>{formatTime(message.sentAt || message.createdAt)}</span>
                   </div>
                 </div>
               </div>
@@ -185,7 +178,7 @@ export function MailThread({
                   size="sm"
                   className="text-slate-400 hover:text-yellow-500 hover:bg-slate-700"
                 >
-                  {message.starred ? (
+                  {false ? (
                     <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
                   ) : (
                     <StarOff className="w-4 h-4" />
@@ -215,13 +208,10 @@ export function MailThread({
             <div className="mb-6">
               <SmartReply
                 emailContent={message.bodyText || message.bodyHtml || ''}
-                senderName={message.fromName}
-                onReplySelect={(reply) => {
+                senderName={message.fromName || message.fromEmail}
+                onReplySelect={() => {
                   // Handle smart reply - open compose with pre-filled reply
-                  onReply({
-                    ...message,
-                    suggestedReply: reply
-                  });
+                  onReply(message);
                 }}
               />
             </div>

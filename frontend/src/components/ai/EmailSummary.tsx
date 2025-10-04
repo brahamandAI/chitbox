@@ -11,8 +11,6 @@ interface EmailSummaryProps {
 }
 
 export function EmailSummary({ 
-  emailContent, 
-  emailSubject, 
   className 
 }: EmailSummaryProps) {
   const [isExpanded, setIsExpanded] = useState(false);

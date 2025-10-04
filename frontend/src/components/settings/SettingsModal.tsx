@@ -336,7 +336,7 @@ export function SettingsModal({
                   <div className="flex items-center justify-between p-4 bg-slate-700 rounded-lg">
                     <div>
                       <h4 className="font-medium text-white">Typing Indicators</h4>
-                      <p className="text-sm text-slate-400">Show when you're typing</p>
+                      <p className="text-sm text-slate-400">Show when you&apos;re typing</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" className="sr-only peer" defaultChecked />

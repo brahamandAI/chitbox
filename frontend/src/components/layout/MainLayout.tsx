@@ -8,7 +8,7 @@ import { ComposeMail } from '../mail/ComposeMail';
 import { PriorityInbox } from '../ai/PriorityInbox';
 import { SettingsModal } from '../settings/SettingsModal';
 import { Button } from '@/components/ui/button';
-import { Folder, MailThread as MailThreadType, MailMessage } from '@/types';
+import { Folder, MailThread as MailThreadType, MailMessage, SendEmailRequest, SaveDraftRequest } from '@/types';
 import { apiClient } from '@/lib/api';
 import { socketService } from '@/lib/socket';
 
@@ -21,8 +21,8 @@ interface MainLayoutProps {
   };
   token: string;
   onLogout?: () => void;
-  demoFolders?: any[];
-  demoThreads?: any[];
+  demoFolders?: Folder[];
+  demoThreads?: MailThreadType[];
   className?: string;
 }
 
@@ -34,7 +34,7 @@ export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, cl
   const [messages, setMessages] = useState<MailMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isComposeOpen, setIsComposeOpen] = useState(false);
-  const [replyTo, setReplyTo] = useState<any>(null);
+  const [replyTo, setReplyTo] = useState<{to: string; subject: string; body: string} | null>(null);
   const [showPriorityInbox, setShowPriorityInbox] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -106,7 +106,7 @@ export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, cl
       if (demoThreads) {
         const thread = demoThreads.find(t => t.id === selectedThreadId);
         if (thread) {
-          setMessages(thread.messages);
+          setMessages(thread.messages || []);
         }
       } else {
         loadThreadMessages(selectedThreadId);
@@ -131,7 +131,7 @@ export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, cl
   const loadThreads = async (folderId: number) => {
     try {
       setIsLoading(true);
-      const response = await apiClient.getThreads(folderId) as { threads: any[] };
+      const response = await apiClient.getThreads(folderId) as { threads: MailThreadType[] };
       setThreads(response.threads);
     } catch (error) {
       console.error('Error loading threads:', error);
@@ -211,7 +211,7 @@ export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, cl
     }
   };
 
-  const handleSendEmail = async (emailData: any) => {
+  const handleSendEmail = async (emailData: SendEmailRequest) => {
     try {
       await apiClient.sendEmail(emailData);
       // Refresh threads
@@ -224,7 +224,7 @@ export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, cl
     }
   };
 
-  const handleSaveDraft = async (draftData: any) => {
+  const _handleSaveDraft = async (draftData: SaveDraftRequest) => {
     try {
       await apiClient.saveDraft(draftData);
       // Refresh threads
@@ -246,7 +246,7 @@ export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, cl
     setIsComposeOpen(true);
   };
 
-  const handleReplyAll = (message: MailMessage) => {
+  const _handleReplyAll = (message: MailMessage) => {
     const allRecipients = [
       message.fromEmail,
       ...message.toEmails.filter(email => email !== user.email),
@@ -333,7 +333,6 @@ export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, cl
               messages={messages}
               selectedThreadId={selectedThreadId}
               onStarToggle={handleStarToggle}
-              onMarkAsRead={handleMarkAsRead}
               onReply={handleReply}
               onForward={handleForward}
               onBack={() => setSelectedThreadId(null)}
@@ -351,7 +350,7 @@ export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, cl
             setReplyTo(null);
           }}
           onSend={handleSendEmail}
-          replyTo={replyTo}
+          replyTo={replyTo || undefined}
         />
       )}
 

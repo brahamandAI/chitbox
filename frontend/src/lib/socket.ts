@@ -1,7 +1,8 @@
-import { io, Socket } from 'socket.io-client';
+import io from 'socket.io-client';
+import { MailMessage } from '@/types';
 
 class SocketService {
-  private socket: Socket | null = null;
+  private socket: ReturnType<typeof io> | null = null;
   private token: string | null = null;
 
   connect(token: string) {
@@ -25,7 +26,7 @@ class SocketService {
       console.log('Disconnected from server');
     });
 
-    this.socket.on('connect_error', (error) => {
+    this.socket.on('connect_error', (error: unknown) => {
       console.error('Connection error:', error);
     });
 
@@ -63,37 +64,37 @@ class SocketService {
     }
   }
 
-  onNewEmail(callback: (data: any) => void) {
+  onNewEmail(callback: (data: { folderId: number; email: MailMessage }) => void) {
     if (this.socket) {
       this.socket.on('new_email', callback);
     }
   }
 
-  onEmailUpdated(callback: (data: any) => void) {
+  onEmailUpdated(callback: (data: { folderId: number; update: MailMessage }) => void) {
     if (this.socket) {
       this.socket.on('email_updated', callback);
     }
   }
 
-  onUserTyping(callback: (data: any) => void) {
+  onUserTyping(callback: (data: { userId: number; userEmail: string; threadId: number; isTyping: boolean }) => void) {
     if (this.socket) {
       this.socket.on('user_typing', callback);
     }
   }
 
-  offNewEmail(callback: (data: any) => void) {
+  offNewEmail(callback: (data: { folderId: number; email: MailMessage }) => void) {
     if (this.socket) {
       this.socket.off('new_email', callback);
     }
   }
 
-  offEmailUpdated(callback: (data: any) => void) {
+  offEmailUpdated(callback: (data: { folderId: number; update: MailMessage }) => void) {
     if (this.socket) {
       this.socket.off('email_updated', callback);
     }
   }
 
-  offUserTyping(callback: (data: any) => void) {
+  offUserTyping(callback: (data: { userId: number; userEmail: string; threadId: number; isTyping: boolean }) => void) {
     if (this.socket) {
       this.socket.off('user_typing', callback);
     }
