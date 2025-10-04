@@ -41,17 +41,18 @@ router.get('/threads/:folderId', verifyToken, async (req: any, res) => {
         mt.updated_at,
         mm.from_email,
         mm.from_name,
+        mm.to_emails,
         mm.body_text,
         mm.sent_at
       FROM mail_threads mt
-      LEFT JOIN mail_messages mm ON mt.id = mm.thread_id
+      INNER JOIN mail_messages mm ON mt.id = mm.thread_id
       WHERE mt.folder_id = $1 AND mt.user_id = $2
     `;
 
     const params: any[] = [folderId, req.user.id];
 
     if (search) {
-      query += ` AND (mt.subject ILIKE $3 OR mm.from_email ILIKE $3 OR mm.body_text ILIKE $3)`;
+      query += ` AND (mt.subject ILIKE $3 OR mm.from_email ILIKE $3 OR mm.to_emails::text ILIKE $3 OR mm.body_text ILIKE $3)`;
       params.push(`%${search}%`);
     }
 
@@ -155,10 +156,26 @@ router.post('/send', verifyToken, sanitizeInput, rateLimit(20, 300000), validate
 
     const user = userResult.rows[0];
 
+    // Get or create sent folder
+    let folderResult = await Database.query(
+      'SELECT id FROM folders WHERE user_id = $1 AND type = $2',
+      [req.user.id, 'sent']
+    );
+
+    let folderId = folderResult.rows[0]?.id;
+
+    if (!folderId) {
+      const newFolderResult = await Database.query(
+        'INSERT INTO folders (user_id, name, type) VALUES ($1, $2, $3) RETURNING id',
+        [req.user.id, 'Sent', 'sent']
+      );
+      folderId = newFolderResult.rows[0].id;
+    }
+
     // Create mail thread
     const threadResult = await Database.query(
-      'INSERT INTO mail_threads (subject, folder_id, user_id) VALUES ($1, (SELECT id FROM folders WHERE user_id = $2 AND type = $3), $2) RETURNING id',
-      [subject, req.user.id, 'sent']
+      'INSERT INTO mail_threads (subject, folder_id, user_id) VALUES ($1, $2, $3) RETURNING id',
+      [subject, folderId, req.user.id]
     );
 
     const threadId = threadResult.rows[0].id;
@@ -301,6 +318,34 @@ router.post('/drafts', verifyToken, async (req: any, res) => {
     });
   } catch (error) {
     console.error('Save draft error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete thread (permanently)
+router.delete('/threads/:threadId', verifyToken, async (req: any, res) => {
+  try {
+    const { threadId } = req.params;
+
+    // Check if thread belongs to user
+    const threadResult = await Database.query(
+      'SELECT id FROM mail_threads WHERE id = $1 AND user_id = $2',
+      [threadId, req.user.id]
+    );
+
+    if (threadResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Thread not found' });
+    }
+
+    // Delete thread (cascade will delete messages and attachments)
+    await Database.query(
+      'DELETE FROM mail_threads WHERE id = $1 AND user_id = $2',
+      [threadId, req.user.id]
+    );
+
+    res.json({ message: 'Thread deleted successfully' });
+  } catch (error) {
+    console.error('Delete thread error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

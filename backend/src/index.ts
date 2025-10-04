@@ -8,6 +8,7 @@ import mailRoutes from './routes/mail';
 import authRoutes from './routes/auth';
 import aiRoutes from './routes/ai';
 import { setupSocketHandlers } from './socket/handlers';
+import { smtpServer } from './services/smtpServer';
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ const io = new Server(server, {
 });
 
 const PORT = process.env.PORT || 3005;
+const SMTP_PORT = parseInt(process.env.SMTP_SERVER_PORT || '2525');
 
 // Middleware
 app.use(cors({
@@ -71,9 +73,13 @@ const startServer = async () => {
       process.exit(1);
     }
 
+    // Start SMTP server
+    smtpServer.setSocketIO(io);
+    await smtpServer.start(SMTP_PORT);
+
     server.listen(PORT, () => {
       console.log(`🚀 ChitBox Backend running on port ${PORT}`);
-      console.log(`📧 Mail server ready for connections`);
+      console.log(`📧 SMTP server running on port ${SMTP_PORT}`);
       console.log(`🔌 Socket.IO server ready for real-time updates`);
     });
   } catch (error) {
@@ -85,6 +91,7 @@ const startServer = async () => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully');
+  await smtpServer.stop();
   await Database.close();
   server.close(() => {
     console.log('Process terminated');
@@ -93,6 +100,7 @@ process.on('SIGTERM', async () => {
 
 process.on('SIGINT', async () => {
   console.log('SIGINT received, shutting down gracefully');
+  await smtpServer.stop();
   await Database.close();
   server.close(() => {
     console.log('Process terminated');

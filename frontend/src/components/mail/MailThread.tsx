@@ -18,40 +18,46 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SmartReply } from '../ai/SmartReply';
-import { EmailSummary } from '../ai/EmailSummary';
-import { ThreadSummary } from '../ai/ThreadSummary';
 import { MailMessage } from '@/types';
 
 interface MailThreadProps {
   messages: MailMessage[];
-  selectedThreadId: number | null;
   onReply: (message: MailMessage) => void;
   onForward: (message: MailMessage) => void;
   onStarToggle: (messageId: number) => void;
+  onMarkAsRead?: (messageId: number) => void;
   onBack: () => void;
   className?: string;
 }
 
 export function MailThread({
   messages,
-  selectedThreadId,
   onReply,
   onForward,
   onStarToggle,
+  onMarkAsRead,
   onBack,
   className
 }: MailThreadProps) {
 
   const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!timestamp) return 'Just now';
+    try {
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) return 'Just now';
+      
+      const now = new Date();
+      const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+      
+      if (diffInMinutes < 1) return 'Just now';
+      if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+      if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+      if (diffInMinutes < 10080) return `${Math.floor(diffInMinutes / 1440)}d ago`;
+      
+      return date.toLocaleDateString();
+    } catch {
+      return 'Just now';
+    }
   };
 
   const getInitials = (name: string | undefined) => {
@@ -65,6 +71,17 @@ export function MailThread({
   };
 
   const latestMessage = messages[messages.length - 1];
+
+  // Mark all messages as read when thread is opened
+  React.useEffect(() => {
+    if (onMarkAsRead && messages.length > 0) {
+      messages.forEach(message => {
+        if (!message.isRead) {
+          onMarkAsRead(message.id);
+        }
+      });
+    }
+  }, [messages, onMarkAsRead]);
 
   if (!latestMessage) {
     return (
@@ -132,16 +149,6 @@ export function MailThread({
         </div>
       </div>
 
-      {/* AI Features - Only show when mail is selected */}
-      {selectedThreadId && (
-        <div className="space-y-4 p-6 border-b border-slate-700">
-          <ThreadSummary messages={messages} />
-          <EmailSummary
-            emailContent={latestMessage.bodyText || latestMessage.bodyHtml || ''}
-            emailSubject={latestMessage.subject}
-          />
-        </div>
-      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -159,11 +166,18 @@ export function MailThread({
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-1">
-                    <h3 className="font-semibold text-white">{message.fromName || message.fromEmail}</h3>
-                    <span className="text-sm text-slate-400">to me</span>
-                    <span className="px-2 py-0.5 text-xs font-bold text-blue-600 bg-blue-100 rounded-full">
-                      New
+                    <h3 className="font-semibold text-white">{message.fromName || message.fromEmail || 'Me'}</h3>
+                    <span className="text-sm text-slate-400">
+                      {message.toEmails && message.toEmails.length > 0 
+                        ? `to ${message.toEmails[0]}` 
+                        : 'to me'
+                      }
                     </span>
+                    {!message.isRead && (
+                      <span className="px-2 py-0.5 text-xs font-bold text-blue-600 bg-blue-100 rounded-full animate-pulse">
+                        New
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center space-x-2 text-sm text-slate-400">
                     <Clock className="w-4 h-4" />
@@ -199,7 +213,16 @@ export function MailThread({
                 {message.bodyHtml ? (
                   <div dangerouslySetInnerHTML={{ __html: message.bodyHtml }} />
                 ) : (
-                  <p>{message.bodyText || 'No content available'}</p>
+                  <div>
+                    {message.bodyText && message.bodyText.trim() ? (
+                      <p className="whitespace-pre-wrap">{message.bodyText}</p>
+                    ) : (
+                      <div className="text-slate-400 italic text-center py-8 bg-slate-700/30 rounded-lg">
+                        <p>No content available</p>
+                        <p className="text-sm mt-2">This email contains no text content.</p>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

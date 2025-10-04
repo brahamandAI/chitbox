@@ -22,6 +22,7 @@ interface MailListProps {
   onThreadSelect: (threadId: number) => void;
   onStarToggle: (threadId: number) => void;
   onMarkAsRead: (threadId: number) => void;
+  onDelete?: (threadId: number) => void;
   onRefresh?: () => void;
   className?: string;
 }
@@ -32,6 +33,7 @@ export function MailList({
   onThreadSelect,
   onStarToggle,
   onMarkAsRead,
+  onDelete,
   onRefresh,
   className
 }: MailListProps) {
@@ -41,8 +43,12 @@ export function MailList({
   const formatTime = (timestamp: string) => {
     try {
       // Handle string timestamps like "2 minutes ago"
-      if (timestamp.includes('ago')) {
+      if (timestamp && timestamp.includes('ago')) {
         return timestamp;
+      }
+      
+      if (!timestamp) {
+        return "Just now";
       }
       
       const date = new Date(timestamp);
@@ -174,11 +180,16 @@ export function MailList({
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2">
                         <h3 className="font-semibold text-white truncate">
-                          {thread.fromName || thread.fromEmail || 'Unknown Sender'}
+                          {thread.fromName || thread.fromEmail || 'Me'}
                         </h3>
-                        <span className="text-sm text-slate-400">to me</span>
+                        <span className="text-sm text-slate-400">
+                          {thread.to_emails && thread.to_emails.length > 0 
+                            ? `to ${thread.to_emails[0]}` 
+                            : 'to me'
+                          }
+                        </span>
                         {!thread.isRead && (
-                          <span className="px-2 py-0.5 text-xs font-bold text-blue-600 bg-blue-100 rounded-full">
+                          <span className="px-2 py-0.5 text-xs font-bold text-blue-600 bg-blue-100 rounded-full animate-pulse">
                             New
                           </span>
                         )}
@@ -214,6 +225,19 @@ export function MailList({
                           >
                             <Circle className="w-4 h-4" />
                           </Button>
+                          {onDelete && (
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(thread.id);
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              className="text-slate-400 hover:text-red-500 hover:bg-slate-600"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>

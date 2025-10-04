@@ -42,7 +42,7 @@ export class AuthService {
 
       // Store token in localStorage
       if (response.token) {
-        localStorage.setItem('auth_token', response.token);
+        localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
       }
 
@@ -109,7 +109,7 @@ export class AuthService {
       console.error('Logout API error:', error);
       // Continue with local logout even if API fails
     } finally {
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
     }
   }
@@ -125,7 +125,7 @@ export class AuthService {
   }
 
   getStoredToken(): string | null {
-    return localStorage.getItem('auth_token');
+    return localStorage.getItem('token');
   }
 
   isAuthenticated(): boolean {

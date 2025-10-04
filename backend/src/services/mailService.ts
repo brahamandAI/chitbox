@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import Database from '../database/connection';
 
 dotenv.config();
 
@@ -23,17 +24,13 @@ export class MailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
+    // Use only local SMTP server for all emails
     this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: false, // true for 465, false for other ports
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
+      host: 'localhost',
+      port: parseInt(process.env.SMTP_SERVER_PORT || '2525'),
+      secure: false,
+      ignoreTLS: true,
+      // No auth needed for local server
     });
   }
 
@@ -55,8 +52,9 @@ export class MailService {
         }))
       };
 
+      console.log('📧 Sending email via local SMTP server...');
       const info = await this.transporter.sendMail(mailOptions);
-      console.log('Email sent successfully:', info.messageId);
+      console.log('✅ Email sent successfully:', info.messageId);
     } catch (error) {
       console.error('Error sending email:', error);
       throw error;
@@ -73,6 +71,7 @@ export class MailService {
       return false;
     }
   }
+
 
   // Method to receive emails (this would typically be implemented with IMAP)
   async receiveEmails(): Promise<void> {

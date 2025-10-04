@@ -213,14 +213,48 @@ export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, cl
 
   const handleSendEmail = async (emailData: SendEmailRequest) => {
     try {
-      await apiClient.sendEmail(emailData);
-      // Refresh threads
+      const result = await apiClient.sendEmail(emailData);
+      console.log('Email sent successfully:', result);
+      
+      // Show success notification
+      if (typeof window !== 'undefined') {
+        // Create a simple notification
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg';
+        notification.textContent = 'Email sent successfully!';
+        document.body.appendChild(notification);
+        
+        // Remove notification after 3 seconds
+        setTimeout(() => {
+          notification.remove();
+        }, 3000);
+      }
+      
+      // Refresh threads to show sent email
       if (selectedFolderId) {
         loadThreads(selectedFolderId);
       }
+      
+      // Also refresh sent folder if it exists
+      const sentFolder = folders.find(f => f.type === 'sent');
+      if (sentFolder) {
+        loadThreads(sentFolder.id);
+      }
+      
     } catch (error) {
       console.error('Error sending email:', error);
-      alert('Failed to send email. Please try again.');
+      
+      // Show error notification
+      if (typeof window !== 'undefined') {
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 z-50 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg';
+        notification.textContent = 'Failed to send email. Please try again.';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          notification.remove();
+        }, 3000);
+      }
     }
   };
 
@@ -275,20 +309,53 @@ export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, cl
     }
   };
 
+  const handleDelete = async (threadId: number) => {
+    try {
+      await apiClient.deleteThread(threadId);
+      console.log('Thread deleted successfully');
+      
+      // Show success notification
+      if (typeof window !== 'undefined') {
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg';
+        notification.textContent = 'Email deleted successfully!';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          notification.remove();
+        }, 3000);
+      }
+      
+      // Refresh threads to remove deleted thread
+      if (selectedFolderId) {
+        loadThreads(selectedFolderId);
+      }
+      
+      // If the deleted thread was selected, clear the selection
+      if (selectedThreadId === threadId) {
+        setSelectedThreadId(null);
+        setMessages([]);
+      }
+      
+    } catch (error) {
+      console.error('Error deleting thread:', error);
+      
+      // Show error notification
+      if (typeof window !== 'undefined') {
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 z-50 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg';
+        notification.textContent = 'Failed to delete email. Please try again.';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          notification.remove();
+        }, 3000);
+      }
+    }
+  };
+
   return (
     <div className={`flex h-screen bg-slate-900 text-white dark-theme ${className}`}>
-      {/* Top Logout Button - Fixed position in header area */}
-      <div className="fixed top-4 right-4 z-[100]">
-        <Button
-          onClick={onLogout}
-          variant="outline"
-          size="sm"
-          className="bg-slate-800/90 backdrop-blur-sm border-slate-600 text-white hover:bg-red-600 hover:text-white hover:border-red-600 shadow-lg"
-        >
-          Logout
-        </Button>
-      </div>
-      
       {/* Sidebar */}
       <div className="w-64 flex-shrink-0 sidebar-container">
         <Sidebar
@@ -321,6 +388,7 @@ export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, cl
               onThreadSelect={handleThreadSelect}
               onStarToggle={handleStarToggle}
               onMarkAsRead={handleMarkAsRead}
+              onDelete={handleDelete}
               onRefresh={handleRefresh}
             />
           )}
@@ -331,10 +399,10 @@ export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, cl
           <div className="w-1/2 main-content">
             <MailThread
               messages={messages}
-              selectedThreadId={selectedThreadId}
               onStarToggle={handleStarToggle}
               onReply={handleReply}
               onForward={handleForward}
+              onMarkAsRead={handleMarkAsRead}
               onBack={() => setSelectedThreadId(null)}
             />
           </div>

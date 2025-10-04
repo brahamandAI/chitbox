@@ -1,6 +1,6 @@
 import { Attachment } from '@/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005/api';
 
 class ApiClient {
   private baseURL: string;
@@ -182,6 +182,12 @@ class ApiClient {
     return this.request(`/mail/threads/${threadId}/star`, {
       method: 'PATCH',
       body: JSON.stringify({ isStarred }),
+    });
+  }
+
+  async deleteThread(threadId: number) {
+    return this.request(`/mail/threads/${threadId}`, {
+      method: 'DELETE',
     });
   }
 
