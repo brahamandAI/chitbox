@@ -7,7 +7,7 @@ import { MailThread } from '../mail/MailThread';
 import { ComposeMail } from '../mail/ComposeMail';
 import { PriorityInbox } from '../ai/PriorityInbox';
 import { SettingsModal } from '../settings/SettingsModal';
-import { Button } from '@/components/ui/button';
+// import { Button } from '@/components/ui/button';
 import { Folder, MailThread as MailThreadType, MailMessage, SendEmailRequest, SaveDraftRequest } from '@/types';
 import { apiClient } from '@/lib/api';
 import { socketService } from '@/lib/socket';
@@ -258,18 +258,18 @@ export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, cl
     }
   };
 
-  const _handleSaveDraft = async (draftData: SaveDraftRequest) => {
-    try {
-      await apiClient.saveDraft(draftData);
-      // Refresh threads
-      if (selectedFolderId) {
-        loadThreads(selectedFolderId);
-      }
-    } catch (error) {
-      console.error('Error saving draft:', error);
-      alert('Failed to save draft. Please try again.');
-    }
-  };
+  // const _handleSaveDraft = async (draftData: SaveDraftRequest) => {
+  //   try {
+  //     await apiClient.saveDraft(draftData);
+  //     // Refresh threads
+  //     if (selectedFolderId) {
+  //       loadThreads(selectedFolderId);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error saving draft:', error);
+  //     alert('Failed to save draft. Please try again.');
+  //   }
+  // };
 
   const handleReply = (message: MailMessage) => {
     setReplyTo({
@@ -280,19 +280,19 @@ export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, cl
     setIsComposeOpen(true);
   };
 
-  const _handleReplyAll = (message: MailMessage) => {
-    const allRecipients = [
-      message.fromEmail,
-      ...message.toEmails.filter(email => email !== user.email),
-      ...message.ccEmails
-    ];
-    setReplyTo({
-      to: allRecipients.join(', '),
-      subject: `Re: ${message.subject}`,
-      body: `\n\n--- Original Message ---\nFrom: ${message.fromName || message.fromEmail}\nDate: ${new Date(message.createdAt).toLocaleString()}\n\n${message.bodyText}`
-    });
-    setIsComposeOpen(true);
-  };
+  // const _handleReplyAll = (message: MailMessage) => {
+  //   const allRecipients = [
+  //     message.fromEmail,
+  //     ...message.toEmails.filter(email => email !== user.email),
+  //     ...message.ccEmails
+  //   ];
+  //   setReplyTo({
+  //     to: allRecipients.join(', '),
+  //     subject: `Re: ${message.subject}`,
+  //     body: `\n\n--- Original Message ---\nFrom: ${message.fromName || message.fromEmail}\nDate: ${new Date(message.createdAt).toLocaleString()}\n\n${message.bodyText}`
+  //   });
+  //   setIsComposeOpen(true);
+  // };
 
   const handleForward = (message: MailMessage) => {
     setReplyTo({

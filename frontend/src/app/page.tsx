@@ -8,26 +8,27 @@ import { WelcomePage } from '@/components/auth/WelcomePage';
 import { User } from '@/types';
 import { authService, User as AuthUser } from '@/lib/auth';
 
-// Demo user data for immediate visual impact
-const _DEMO_USER: User = {
-  id: 1,
-  email: 'demo@chitbox.com',
-  name: 'Demo User',
-  avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face&auto=format&q=80',
-  createdAt: new Date().toISOString()
-};
+// Demo user data for immediate visual impact (commented out)
+// const _DEMO_USER: User = {
+//   id: 1,
+//   email: 'demo@chitbox.com',
+//   name: 'Demo User',
+//   avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face&auto=format&q=80',
+//   createdAt: new Date().toISOString()
+// };
 
-// Demo folders
-const _DEMO_FOLDERS = [
-  { id: 1, name: 'Inbox', unreadCount: 5, type: 'inbox' },
-  { id: 2, name: 'Starred', unreadCount: 2, type: 'starred' },
-  { id: 3, name: 'Sent', unreadCount: 0, type: 'sent' },
-  { id: 4, name: 'Drafts', unreadCount: 1, type: 'drafts' },
-  { id: 5, name: 'Spam', unreadCount: 0, type: 'spam' },
-  { id: 6, name: 'Trash', unreadCount: 0, type: 'trash' }
-];
+// Demo folders (commented out)
+// const _DEMO_FOLDERS = [
+//   { id: 1, name: 'Inbox', unreadCount: 5, type: 'inbox' },
+//   { id: 2, name: 'Starred', unreadCount: 2, type: 'starred' },
+//   { id: 3, name: 'Sent', unreadCount: 0, type: 'sent' },
+//   { id: 4, name: 'Drafts', unreadCount: 1, type: 'drafts' },
+//   { id: 5, name: 'Spam', unreadCount: 0, type: 'spam' },
+//   { id: 6, name: 'Trash', unreadCount: 0, type: 'trash' }
+// ];
 
-// Demo email threads
+// Demo email threads (commented out)
+/*
 const _DEMO_THREADS = [
   {
     id: 1,
@@ -155,6 +156,7 @@ const _DEMO_THREADS = [
     ]
   }
 ];
+*/
 
 type AuthView = 'loading' | 'login' | 'register' | 'welcome' | 'app';
 

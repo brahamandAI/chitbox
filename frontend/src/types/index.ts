@@ -27,6 +27,7 @@ export interface MailThread {
   updatedAt: string;
   fromEmail: string;
   fromName?: string;
+  toEmails?: string[];
   bodyText?: string;
   sentAt?: string;
   folderId?: number;

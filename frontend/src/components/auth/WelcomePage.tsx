@@ -25,6 +25,7 @@ export function WelcomePage({ userName, userEmail, onContinue, className }: Welc
   const [, setCurrentStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
+  /*
   const _features = [
     {
       icon: Mail,
@@ -51,6 +52,7 @@ export function WelcomePage({ userName, userEmail, onContinue, className }: Welc
       color: 'text-green-400'
     }
   ];
+  */
 
   const welcomeSteps = [
     {

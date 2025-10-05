@@ -10,7 +10,8 @@ import {
   RefreshCw, 
   Search,
   Filter,
-  MailOpen
+  MailOpen,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -183,8 +184,8 @@ export function MailList({
                           {thread.fromName || thread.fromEmail || 'Me'}
                         </h3>
                         <span className="text-sm text-slate-400">
-                          {thread.to_emails && thread.to_emails.length > 0 
-                            ? `to ${thread.to_emails[0]}` 
+                          {thread.toEmails && thread.toEmails.length > 0 
+                            ? `to ${thread.toEmails[0]}` 
                             : 'to me'
                           }
                         </span>
