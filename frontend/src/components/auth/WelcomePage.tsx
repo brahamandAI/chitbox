@@ -4,12 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   CheckCircle, 
-  Mail, 
   Sparkles, 
   ArrowRight,
-  Zap,
-  Shield,
-  Wand2,
   Heart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -25,34 +21,6 @@ export function WelcomePage({ userName, userEmail, onContinue, className }: Welc
   const [, setCurrentStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  /*
-  const _features = [
-    {
-      icon: Mail,
-      title: 'Smart Email Management',
-      description: 'Organize your emails with AI-powered categorization and priority detection.',
-      color: 'text-blue-400'
-    },
-    {
-      icon: Wand2,
-      title: 'AI-Powered Features',
-      description: 'Smart compose, reply suggestions, and email summarization to boost your productivity.',
-      color: 'text-purple-400'
-    },
-    {
-      icon: Zap,
-      title: 'Lightning Fast',
-      description: 'Built for speed with real-time updates and instant email delivery.',
-      color: 'text-yellow-400'
-    },
-    {
-      icon: Shield,
-      title: 'Secure & Private',
-      description: 'Your data is protected with enterprise-grade security and privacy controls.',
-      color: 'text-green-400'
-    }
-  ];
-  */
 
   const welcomeSteps = [
     {

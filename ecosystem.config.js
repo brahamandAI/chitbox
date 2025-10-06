@@ -10,7 +10,8 @@ module.exports = {
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        PORT: 3001
+        PORT: 3005,
+        CORS_ORIGIN: 'http://localhost:3004'
       },
       error_file: '../logs/backend-error.log',
       out_file: '../logs/backend-out.log',
@@ -28,7 +29,9 @@ module.exports = {
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        PORT: 3004
+        PORT: 3004,
+        NEXT_PUBLIC_API_URL: 'http://localhost:3005/api',
+        NEXT_PUBLIC_SOCKET_URL: 'http://localhost:3005'
       },
       error_file: '../logs/frontend-error.log',
       out_file: '../logs/frontend-out.log',
