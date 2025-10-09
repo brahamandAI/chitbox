@@ -33,8 +33,8 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 3004,
-        NEXT_PUBLIC_API_URL: 'https://chitbox.co:3005/api',
-        NEXT_PUBLIC_SOCKET_URL: 'https://chitbox.co:3005'
+        NEXT_PUBLIC_API_URL: 'https://chitbox.co/api',
+        NEXT_PUBLIC_SOCKET_URL: 'https://chitbox.co'
       },
       error_file: '../logs/frontend-error.log',
       out_file: '../logs/frontend-out.log',

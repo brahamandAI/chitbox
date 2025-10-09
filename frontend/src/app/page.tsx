@@ -8,6 +8,7 @@ import { WelcomePage } from '@/components/auth/WelcomePage';
 import { HomePage } from '@/components/home/HomePage';
 import { User } from '@/types';
 import { authService, User as AuthUser } from '@/lib/auth';
+import { ChitboxLogo } from '@/components/ui/ChitboxLogo';
 
 // Demo user data for immediate visual impact (commented out)
 // const _DEMO_USER: User = {
@@ -162,15 +163,16 @@ const _DEMO_THREADS = [
 type AuthView = 'loading' | 'home' | 'login' | 'register' | 'welcome' | 'app';
 
 export default function Page() {
-  const [authView, setAuthView] = useState<AuthView>('loading');
+  const [authView, setAuthView] = useState<AuthView>('home'); // Start with home instead of loading
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [, setIsNewUser] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // Always show homepage first, then check authentication in background
-    setAuthView('home');
+    // Mark as client-side mounted
+    setIsClient(true);
     
     // Check if user is already authenticated in background
     const checkAuth = async () => {
@@ -247,20 +249,25 @@ export default function Page() {
     setAuthView('home');
   };
 
+  // Show minimal loading only during SSR/hydration
+  if (!isClient) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="text-center">
+          <div className="w-20 h-20 border-4 border-slate-600 rounded-full animate-spin border-t-blue-500 mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
+
   // Loading state
   if (authView === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="text-center">
-          <div className="relative mb-8">
-            <div className="w-20 h-20 border-4 border-slate-600 rounded-full animate-spin border-t-blue-500"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-pulse"></div>
-            </div>
+          <div className="mb-8">
+            <ChitboxLogo size="xl" showTagline={true} />
           </div>
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
-            ChitBox
-          </h2>
           <p className="text-slate-400 text-lg">Loading your modern email experience...</p>
           <div className="mt-4 flex justify-center space-x-1">
             <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>

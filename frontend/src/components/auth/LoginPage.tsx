@@ -14,6 +14,7 @@ import {
   Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ChitboxLogo } from '@/components/ui/ChitboxLogo';
 
 interface LoginPageProps {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -105,8 +106,8 @@ export function LoginPage({
         <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-700/50 p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <Mail className="w-8 h-8 text-white" />
+            <div className="flex justify-center mb-4">
+              <ChitboxLogo size="xl" showText={false} />
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">Welcome</h1>
             <p className="text-slate-400">Sign in to your ChitBox account</p>

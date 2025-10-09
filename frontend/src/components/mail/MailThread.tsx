@@ -193,6 +193,36 @@ export function MailThread({
                     <span>{formatTime(message.sentAt || message.createdAt)}</span>
                   </div>
                 </div>
+                
+                {/* CC and BCC Information */}
+                {(message.ccEmails && message.ccEmails.length > 0) || (message.bccEmails && message.bccEmails.length > 0) ? (
+                  <div className="mt-3 p-3 bg-slate-800/50 rounded-lg border border-slate-600">
+                    {message.ccEmails && message.ccEmails.length > 0 && (
+                      <div className="flex items-start space-x-2 mb-2">
+                        <span className="text-xs font-medium text-green-400 min-w-[40px]">Cc:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {message.ccEmails.map((email, index) => (
+                            <span key={index} className="text-xs text-slate-300 bg-green-500/20 px-2 py-1 rounded-full">
+                              {email}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {message.bccEmails && message.bccEmails.length > 0 && (
+                      <div className="flex items-start space-x-2">
+                        <span className="text-xs font-medium text-orange-400 min-w-[40px]">Bcc:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {message.bccEmails.map((email, index) => (
+                            <span key={index} className="text-xs text-slate-300 bg-orange-500/20 px-2 py-1 rounded-full">
+                              {email}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
               </div>
               <div className="flex items-center space-x-2">
                 <Button

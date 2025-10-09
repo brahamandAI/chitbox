@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Shield, Zap, Brain, Mail, Lock, Sparkles, Users, Globe, CheckCircle, Star, MessageSquare, TrendingUp } from 'lucide-react';
+import { ChitboxLogo } from '@/components/ui/ChitboxLogo';
 
 interface HomePageProps {
   onLogin: () => void;
@@ -66,14 +67,7 @@ export function HomePage({ onLogin, onRegister, onContinueToApp, isAuthenticated
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             {/* Logo */}
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                <Mail className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                ChitBox
-              </span>
-            </div>
+            <ChitboxLogo size="lg" showTagline={false} />
 
             {/* Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
@@ -362,12 +356,7 @@ export function HomePage({ onLogin, onRegister, onContinueToApp, isAuthenticated
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <Mail className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold text-white">ChitBox</span>
-              </div>
+              <ChitboxLogo size="md" showTagline={true} className="text-white" />
               <p className="text-gray-400">
                 The future of email communication with AI-powered features and military-grade security.
               </p>

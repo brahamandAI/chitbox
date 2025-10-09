@@ -15,10 +15,17 @@ dotenv.config();
 
 const app = express();
 const server = createServer(app);
+
+// Parse CORS origins (supports comma-separated list or single origin)
+const corsOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  : ["https://chitbox.co"];
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || "https://chitbox.co",
-    methods: ["GET", "POST"]
+    origin: corsOrigins,
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
@@ -27,7 +34,7 @@ const SMTP_PORT = parseInt(process.env.SMTP_SERVER_PORT || '2525');
 
 // Middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || "https://chitbox.co",
+  origin: corsOrigins,
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));

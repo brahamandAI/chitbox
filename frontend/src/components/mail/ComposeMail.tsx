@@ -46,6 +46,11 @@ export function ComposeMail({
   const [isSending, setIsSending] = useState(false);
   const [recipients, setRecipients] = useState<string[]>([]);
   const [currentRecipient, setCurrentRecipient] = useState('');
+  const [ccRecipients, setCcRecipients] = useState<string[]>([]);
+  const [currentCcRecipient, setCurrentCcRecipient] = useState('');
+  const [bccRecipients, setBccRecipients] = useState<string[]>([]);
+  const [currentBccRecipient, setCurrentBccRecipient] = useState('');
+  const [showCcBcc, setShowCcBcc] = useState(false);
 
   // Update form when replyTo changes (for smart reply)
   React.useEffect(() => {
@@ -57,6 +62,21 @@ export function ComposeMail({
       setSubject(replyTo.subject || '');
       if (replyTo.body) {
         setBody(replyTo.body);
+        
+        // Extract CC recipients from the forwarded/replied message body
+        const ccMatch = replyTo.body.match(/Cc:\s*([^\n]+)/i);
+        if (ccMatch) {
+          const ccEmails = ccMatch[1].split(',').map(email => email.trim()).filter(email => email && email.includes('@'));
+          setCcRecipients(prev => [...new Set([...prev, ...ccEmails])]);
+        }
+        
+        // Extract BCC recipients from the forwarded/replied message body (for display only)
+        const bccMatch = replyTo.body.match(/Bcc:\s*([^\n]+)/i);
+        if (bccMatch) {
+          const bccEmails = bccMatch[1].split(',').map(email => email.trim()).filter(email => email && email.includes('@'));
+          // Note: BCC recipients are typically not included in replies for privacy
+          // This is just for display in the forwarded message body
+        }
       }
     }
   }, [replyTo, recipients]);
@@ -68,6 +88,8 @@ export function ComposeMail({
     try {
       await onSend({
         to: recipients.length === 1 ? recipients[0] : recipients,
+        cc: ccRecipients.length > 0 ? (ccRecipients.length === 1 ? ccRecipients[0] : ccRecipients) : undefined,
+        bcc: bccRecipients.length > 0 ? (bccRecipients.length === 1 ? bccRecipients[0] : bccRecipients) : undefined,
         subject,
         body,
         attachments: attachments.map(file => ({ filename: file.name, originalName: file.name, mimeType: file.type, fileSize: file.size, filePath: "", id: 0, messageId: 0, createdAt: new Date().toISOString() }))
@@ -76,6 +98,10 @@ export function ComposeMail({
       // Reset form
       setRecipients([]);
       setCurrentRecipient('');
+      setCcRecipients([]);
+      setCurrentCcRecipient('');
+      setBccRecipients([]);
+      setCurrentBccRecipient('');
       setSubject('');
       setBody('');
       setAttachments([]);
@@ -98,10 +124,46 @@ export function ComposeMail({
     setRecipients(recipients.filter(r => r !== email));
   };
 
+  const addCcRecipient = (email: string) => {
+    if (email && email.includes('@') && !ccRecipients.includes(email) && !recipients.includes(email)) {
+      setCcRecipients([...ccRecipients, email]);
+      setCurrentCcRecipient('');
+    }
+  };
+
+  const removeCcRecipient = (email: string) => {
+    setCcRecipients(ccRecipients.filter(r => r !== email));
+  };
+
+  const addBccRecipient = (email: string) => {
+    if (email && email.includes('@') && !bccRecipients.includes(email) && !recipients.includes(email) && !ccRecipients.includes(email)) {
+      setBccRecipients([...bccRecipients, email]);
+      setCurrentBccRecipient('');
+    }
+  };
+
+  const removeBccRecipient = (email: string) => {
+    setBccRecipients(bccRecipients.filter(r => r !== email));
+  };
+
   const handleRecipientKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
       addRecipient(currentRecipient.trim());
+    }
+  };
+
+  const handleCcKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addCcRecipient(currentCcRecipient.trim());
+    }
+  };
+
+  const handleBccKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addBccRecipient(currentBccRecipient.trim());
     }
   };
 
@@ -183,6 +245,90 @@ export function ComposeMail({
                 />
               </div>
             </div>
+          </div>
+
+          {/* CC Field */}
+          {showCcBcc && (
+            <div className="flex items-start space-x-2">
+              <label className="w-12 text-sm font-medium text-slate-300 mt-3">Cc:</label>
+              <div className="flex-1">
+                <div className="flex flex-wrap gap-2 p-2 bg-slate-700 border border-slate-600 rounded-lg min-h-[40px] focus-within:border-blue-500">
+                  {ccRecipients.map((email, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center space-x-1 bg-green-500 text-white px-2 py-1 rounded-full text-sm font-medium"
+                    >
+                      <span>{email}</span>
+                      <button
+                        onClick={() => removeCcRecipient(email)}
+                        className="ml-1 hover:bg-green-600 rounded-full p-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <input
+                    type="text"
+                    value={currentCcRecipient}
+                    onChange={(e) => setCurrentCcRecipient(e.target.value)}
+                    onKeyPress={handleCcKeyPress}
+                    onBlur={() => addCcRecipient(currentCcRecipient.trim())}
+                    placeholder={ccRecipients.length === 0 ? "cc@example.com" : ""}
+                    className="flex-1 bg-transparent text-white placeholder-slate-400 focus:outline-none min-w-[200px]"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* BCC Field */}
+          {showCcBcc && (
+            <div className="flex items-start space-x-2">
+              <label className="w-12 text-sm font-medium text-slate-300 mt-3">Bcc:</label>
+              <div className="flex-1">
+                <div className="flex flex-wrap gap-2 p-2 bg-slate-700 border border-slate-600 rounded-lg min-h-[40px] focus-within:border-blue-500">
+                  {bccRecipients.map((email, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center space-x-1 bg-orange-500 text-white px-2 py-1 rounded-full text-sm font-medium"
+                    >
+                      <span>{email}</span>
+                      <button
+                        onClick={() => removeBccRecipient(email)}
+                        className="ml-1 hover:bg-orange-600 rounded-full p-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <input
+                    type="text"
+                    value={currentBccRecipient}
+                    onChange={(e) => setCurrentBccRecipient(e.target.value)}
+                    onKeyPress={handleBccKeyPress}
+                    onBlur={() => addBccRecipient(currentBccRecipient.trim())}
+                    placeholder={bccRecipients.length === 0 ? "bcc@example.com" : ""}
+                    className="flex-1 bg-transparent text-white placeholder-slate-400 focus:outline-none min-w-[200px]"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* CC/BCC Toggle */}
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowCcBcc(!showCcBcc)}
+              className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              {showCcBcc ? 'Hide' : 'Show'} Cc & Bcc
+            </button>
+            {showCcBcc && (
+              <div className="text-xs text-slate-400 ml-4">
+                <span className="text-green-400">Cc:</span> Carbon Copy - visible to all recipients
+                <span className="text-orange-400 ml-4">Bcc:</span> Blind Carbon Copy - hidden from other recipients
+              </div>
+            )}
           </div>
           
           <div className="flex items-center space-x-2">

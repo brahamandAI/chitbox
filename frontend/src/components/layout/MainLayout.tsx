@@ -336,7 +336,7 @@ export function MainLayout({ user: _user, token, onLogout, demoFolders, demoThre
     setReplyTo({
       to: message.fromEmail,
       subject: `Re: ${message.subject}`,
-      body: `\n\n--- Original Message ---\nFrom: ${message.fromName || message.fromEmail}\nDate: ${new Date(message.createdAt).toLocaleString()}\n\n${message.bodyText}`
+      body: `\n\n--- Original Message ---\nFrom: ${message.fromName || message.fromEmail}\nDate: ${new Date(message.createdAt).toLocaleString()}\n${message.ccEmails && message.ccEmails.length > 0 ? `Cc: ${message.ccEmails.join(', ')}\n` : ''}${message.bccEmails && message.bccEmails.length > 0 ? `Bcc: ${message.bccEmails.join(', ')}\n` : ''}\n${message.bodyText}`
     });
     setIsComposeOpen(true);
   };
@@ -346,7 +346,7 @@ export function MainLayout({ user: _user, token, onLogout, demoFolders, demoThre
     setReplyTo({
       to: '',
       subject: `Fwd: ${message.subject}`,
-      body: `\n\n--- Forwarded Message ---\nFrom: ${message.fromName || message.fromEmail}\nDate: ${new Date(message.createdAt).toLocaleString()}\n\n${message.bodyText}`
+      body: `\n\n--- Forwarded Message ---\nFrom: ${message.fromName || message.fromEmail}\nDate: ${new Date(message.createdAt).toLocaleString()}\n${message.ccEmails && message.ccEmails.length > 0 ? `Cc: ${message.ccEmails.join(', ')}\n` : ''}${message.bccEmails && message.bccEmails.length > 0 ? `Bcc: ${message.bccEmails.join(', ')}\n` : ''}\n${message.bodyText}`
     });
     setIsComposeOpen(true);
   };
