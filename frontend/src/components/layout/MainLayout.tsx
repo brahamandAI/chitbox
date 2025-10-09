@@ -25,7 +25,7 @@ interface MainLayoutProps {
   className?: string;
 }
 
-export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, className }: MainLayoutProps) {
+export function MainLayout({ user: _user, token, onLogout, demoFolders, demoThreads, className }: MainLayoutProps) {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
   const [threads, setThreads] = useState<MailThreadType[]>([]);
@@ -49,13 +49,31 @@ export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, cl
     if (!demoThreads) {
       socketService.connect(token);
       
+      // Request notification permission
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+      
       // Set up real-time listeners
-      socketService.onNewEmail((data) => {
-        console.log('New email received:', data);
+      socketService.onNewEmail((data: Record<string, unknown>) => {
+        console.log('📬 New email received:', data);
+        
+        // Show notification
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('New Email from ChitBox', {
+            body: `From: ${data.fromName || data.fromEmail || 'Unknown'}\nSubject: ${data.subject || 'No Subject'}`,
+            icon: '/favicon.ico',
+            tag: `email-${data.messageId || Date.now()}`
+          });
+        }
+        
         // Refresh threads if we're viewing the same folder
         if (selectedFolderId && selectedFolderId === data.folderId) {
           loadThreads(selectedFolderId);
         }
+        
+        // Always refresh folder counts
+        loadFolders();
       });
 
       socketService.onEmailUpdated((data) => {
@@ -130,8 +148,29 @@ export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, cl
   const loadThreads = async (folderId: number) => {
     try {
       setIsLoading(true);
-      const response = await apiClient.getThreads(folderId) as { threads: MailThreadType[] };
-      setThreads(response.threads);
+      const response = await apiClient.getThreads(folderId) as { threads: Record<string, unknown>[] };
+      
+      // Map backend response to frontend format
+      const mappedThreads: MailThreadType[] = response.threads.map((thread: Record<string, unknown>) => ({
+        id: thread.id as number,
+        subject: thread.subject as string,
+        preview: thread.body_text ? (thread.body_text as string).substring(0, 100) + '...' : undefined,
+        isRead: (thread.is_read as boolean) || (thread.isRead as boolean) || false,
+        isStarred: (thread.is_starred as boolean) || (thread.isStarred as boolean) || false,
+        isImportant: (thread.is_important as boolean) || (thread.isImportant as boolean) || false,
+        timestamp: (thread.sent_at as string) || (thread.updated_at as string) || (thread.created_at as string),
+        createdAt: (thread.created_at as string) || (thread.createdAt as string),
+        updatedAt: (thread.updated_at as string) || (thread.updatedAt as string),
+        fromEmail: (thread.from_email as string) || (thread.fromEmail as string) || '',
+        fromName: (thread.from_name as string) || (thread.fromName as string),
+        toEmails: (thread.to_emails as string[]) || (thread.toEmails as string[]) || [],
+        bodyText: (thread.body_text as string) || (thread.bodyText as string),
+        folderId: (thread.folder_id as number) || (thread.folderId as number),
+        is_sent: (thread.is_sent as boolean) || (thread.isSent as boolean) || false,
+        sentAt: (thread.sent_at as string) || (thread.sentAt as string)
+      }));
+      
+      setThreads(mappedThreads);
     } catch (error) {
       console.error('Error loading threads:', error);
     } finally {
@@ -141,8 +180,39 @@ export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, cl
 
   const loadThreadMessages = async (threadId: number) => {
     try {
-      const response = await apiClient.getThreadMessages(threadId) as { messages: MailMessage[] };
-      setMessages(response.messages);
+      const response = await apiClient.getThreadMessages(threadId) as { messages: Record<string, unknown>[] };
+      
+      // Map backend response to frontend format
+      const mappedMessages: MailMessage[] = response.messages.map((msg: Record<string, unknown>) => ({
+        id: msg.id as number,
+        threadId: (msg.thread_id as number) || (msg.threadId as number),
+        fromEmail: (msg.from_email as string) || (msg.fromEmail as string),
+        fromName: (msg.from_name as string) || (msg.fromName as string),
+        toEmails: (msg.to_emails as string[]) || (msg.toEmails as string[]) || [],
+        ccEmails: (msg.cc_emails as string[]) || (msg.ccEmails as string[]) || [],
+        bccEmails: (msg.bcc_emails as string[]) || (msg.bccEmails as string[]) || [],
+        subject: msg.subject as string,
+        bodyText: (msg.body_text as string) || (msg.bodyText as string),
+        bodyHtml: (msg.body_html as string) || (msg.bodyHtml as string),
+        isRead: (msg.is_read as boolean) || (msg.isRead as boolean) || false,
+        isDraft: (msg.is_draft as boolean) || (msg.isDraft as boolean) || false,
+        isSent: (msg.is_sent as boolean) || (msg.isSent as boolean) || false,
+        is_sent: (msg.is_sent as boolean) || (msg.isSent as boolean) || false,
+        sentAt: (msg.sent_at as string) || (msg.sentAt as string),
+        createdAt: (msg.created_at as string) || (msg.createdAt as string),
+        attachments: ((msg.attachments as Array<Record<string, unknown>>) || []).map((att: Record<string, unknown>) => ({
+          id: att.id as number,
+          messageId: att.messageId as number || att.message_id as number,
+          filename: att.filename as string,
+          originalName: att.originalName as string || att.original_name as string,
+          mimeType: att.mimeType as string || att.mime_type as string,
+          fileSize: att.fileSize as number || att.file_size as number,
+          filePath: att.filePath as string || att.file_path as string,
+          createdAt: att.createdAt as string || att.created_at as string,
+        }))
+      }));
+      
+      setMessages(mappedMessages);
     } catch (error) {
       console.error('Error loading messages:', error);
     }
@@ -154,15 +224,19 @@ export function MainLayout({ user, token, onLogout, demoFolders, demoThreads, cl
     setMessages([]);
   };
 
-  const handleThreadSelect = (threadId: number) => {
+  const handleThreadSelect = async (threadId: number) => {
     setSelectedThreadId(threadId);
-    // Mark as read in demo mode
+    
+    // Always mark as read when thread is selected
     if (demoThreads) {
       setThreads(prev => prev.map(thread => 
         thread.id === threadId 
           ? { ...thread, isRead: true }
           : thread
       ));
+    } else {
+      // Mark as read via API for real threads
+      await handleMarkAsRead(threadId);
     }
   };
 

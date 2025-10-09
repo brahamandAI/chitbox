@@ -278,6 +278,14 @@ export function RegisterPage({
                   )}
                 </div>
 
+                {/* Error Message */}
+                {error && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg flex items-center space-x-2">
+                    <div className="w-1 h-8 bg-red-500 rounded-full"></div>
+                    <p className="text-red-400 text-sm">{error}</p>
+                  </div>
+                )}
+
                 {/* Password Field */}
                 <div className="space-y-2">
                   <label htmlFor="password" className="text-sm font-medium text-slate-300">

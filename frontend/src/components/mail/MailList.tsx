@@ -181,23 +181,30 @@ export function MailList({
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2">
                         <h3 className="font-semibold text-white truncate">
-                          {thread.fromName || thread.fromEmail || 'Me'}
+                          {thread.is_sent 
+                            ? 'Me' 
+                            : (thread.fromName || thread.fromEmail || 'Unknown Sender')
+                          }
                         </h3>
                         <span className="text-sm text-slate-400">
-                          {thread.toEmails && thread.toEmails.length > 0 
-                            ? `to ${thread.toEmails[0]}` 
-                            : 'to me'
+                          {thread.is_sent 
+                            ? (thread.toEmails && thread.toEmails.length > 0 
+                                ? `to ${thread.toEmails[0]}` 
+                                : 'to me')
+                            : (thread.fromEmail && thread.fromName 
+                                ? `${thread.fromName} <${thread.fromEmail}>`
+                                : (thread.fromEmail || 'Unknown'))
                           }
                         </span>
                         {!thread.isRead && (
-                          <span className="px-2 py-0.5 text-xs font-bold text-blue-600 bg-blue-100 rounded-full animate-pulse">
-                            New
+                          <span className="px-3 py-1 text-xs font-extrabold text-white bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 rounded-full shadow-lg animate-pulse ring-2 ring-yellow-400 ring-opacity-50">
+                            NEW
                           </span>
                         )}
                       </div>
                       <div className="flex items-center space-x-2">
                         <span className="text-sm text-slate-400">
-                          {formatTime(thread.sentAt || thread.createdAt)}
+                          {formatTime(thread.sentAt || thread.updatedAt || thread.createdAt)}
                         </span>
                         <div className="flex items-center space-x-1">
                           <Button

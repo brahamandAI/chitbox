@@ -1,0 +1,117 @@
+====================================================================
+🚀 CHITBOX MAIL SERVER - DNS RECORDS TO ADD
+====================================================================
+
+YOUR SERVER IP: 31.97.207.118
+
+IMPORTANT: Add these DNS records to your domain chitbox.co
+
+====================================================================
+1️⃣ MX RECORD (Mail Exchange - Required)
+====================================================================
+Type: MX
+Name: @ (or blank/root)
+Value: mail.chitbox.co
+Priority: 10
+TTL: 3600 (or Auto)
+
+====================================================================
+2️⃣ A RECORD (For mail subdomain - Required)
+====================================================================
+Type: A
+Name: mail
+Value: 31.97.207.118
+TTL: 3600 (or Auto)
+
+====================================================================
+3️⃣ SPF RECORD (Prevent email spoofing - Required)
+====================================================================
+Type: TXT
+Name: @ (or blank/root)
+Value: v=spf1 mx ip4:31.97.207.118 ~all
+TTL: 3600 (or Auto)
+
+====================================================================
+4️⃣ DKIM RECORD (Email authentication - Required)
+====================================================================
+Type: TXT
+Name: mail._domainkey
+Value: v=DKIM1; h=sha256; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwV8Gt9S/SlHW5UVqYeF+4KNhbngXRMbbvmVb9N5xRdmrLpUNWCHKBoHfGhHqxBhGkuP8NRHB+DSAeDXxnl+cgBv5tOFgDSrdNYc0C6IHTf/naUthx0A4aqeQ3BZ+rgEdZEWLazQaBKY7lXXHXScNFnZCGhSI2KbsWpOgwobklNubBmKX+Qze0bO5u/Y220IndrgBAtxCyaCLEie7mSX4msmNQ7HWt3CDqgop/mjZExElCQZpxKyCBRLvtBRPM3A6sAXPjM0bKlC30jC9tshhG8OFbWoVK64Hj2Ii49vYyQ4V2rzMd/T8sh5xeQ78UmA3LqHShK6/KuwYJ9wg+FAMowIDAQAB
+TTL: 3600 (or Auto)
+
+====================================================================
+5️⃣ DMARC RECORD (Email policy - Required)
+====================================================================
+Type: TXT
+Name: _dmarc
+Value: v=DMARC1; p=quarantine; rua=mailto:postmaster@chitbox.co; pct=100; adkim=s; aspf=s
+TTL: 3600 (or Auto)
+
+====================================================================
+6️⃣ REVERSE DNS (PTR Record - CRITICAL for delivery)
+====================================================================
+⚠️ IMPORTANT: You MUST contact your hosting provider and request:
+
+Reverse DNS (PTR) Setup:
+IP Address: 31.97.207.118
+Hostname: mail.chitbox.co
+
+This is CRITICAL for Gmail/Yahoo/Outlook delivery!
+
+====================================================================
+📋 HOW TO ADD THESE RECORDS
+====================================================================
+
+If using Cloudflare:
+1. Go to Cloudflare Dashboard
+2. Select domain: chitbox.co
+3. Click "DNS" → "Records"
+4. Click "Add record" for each record above
+5. Turn OFF proxy (gray cloud) for mail.chitbox.co A record
+
+If using GoDaddy/Namecheap/Other:
+1. Login to your domain registrar
+2. Find DNS Management/DNS Settings
+3. Add each record listed above
+
+====================================================================
+✅ VERIFICATION (After 5-30 minutes)
+====================================================================
+
+Test your DNS records:
+1. MX: dig MX chitbox.co
+2. SPF: dig TXT chitbox.co  
+3. DKIM: dig TXT mail._domainkey.chitbox.co
+4. Mail server: dig A mail.chitbox.co
+
+Or use online tools:
+- https://mxtoolbox.com/SuperTool.aspx
+- https://www.mail-tester.com/
+- https://dkimvalidator.com/
+
+====================================================================
+🚀 AFTER DNS IS CONFIGURED
+====================================================================
+
+1. Restart ChitBox backend:
+   cd /home/chitbox/htdocs/chitbox.co/chitbox
+   pm2 restart chitbox-backend
+
+2. Test email delivery:
+   - Send email to your Gmail
+   - Send email to: check-auth@verifier.port25.com
+   - Check spam score: https://www.mail-tester.com/
+
+====================================================================
+📞 CONTACT YOUR HOSTING PROVIDER FOR:
+====================================================================
+
+Provider Contact: (Check your hosting account)
+Request: "Please set up Reverse DNS (PTR record)"
+Details:
+  - IP: 31.97.207.118
+  - Hostname: mail.chitbox.co
+
+This is required for professional email delivery!
+
+====================================================================

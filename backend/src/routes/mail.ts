@@ -2,10 +2,136 @@ import express from 'express';
 import Database from '../database/connection';
 import { verifyToken } from '../middleware/session';
 import { MailService } from '../services/mailService';
+import { EmailQueueService } from '../services/emailQueue';
 import { sanitizeInput, validateEmailData, rateLimit } from '../middleware/validation';
+import { Server as SocketIOServer } from 'socket.io';
 
 const router = express.Router();
 const mailService = new MailService();
+const emailQueue = new EmailQueueService();
+
+// Store Socket.IO instance
+let io: SocketIOServer | null = null;
+
+// Function to set Socket.IO instance
+export function setSocketIO(socketIO: SocketIOServer) {
+  io = socketIO;
+}
+
+// Helper function to save incoming emails
+async function saveIncomingEmail({
+  from_email,
+  from_name,
+  to_email,
+  to_name,
+  subject,
+  body_text,
+  body_html,
+  cc = [],
+  bcc = [],
+  attachments = []
+}: {
+  from_email: string;
+  from_name: string;
+  to_email: string;
+  to_name: string;
+  subject: string;
+  body_text: string;
+  body_html?: string;
+  cc?: string[];
+  bcc?: string[];
+  attachments?: any[];
+}) {
+  // Get or create inbox folder for recipient
+  let folderResult = await Database.query(
+    'SELECT id FROM folders WHERE user_id = (SELECT id FROM users WHERE email = $1) AND type = $2',
+    [to_email, 'inbox']
+  );
+
+  let folderId = folderResult.rows[0]?.id;
+
+  if (!folderId) {
+    // Get user ID first
+    const userResult = await Database.query('SELECT id FROM users WHERE email = $1', [to_email]);
+    if (userResult.rows.length === 0) return; // User doesn't exist
+    
+    const userId = userResult.rows[0].id;
+    const newFolderResult = await Database.query(
+      'INSERT INTO folders (user_id, name, type) VALUES ($1, $2, $3) RETURNING id',
+      [userId, 'Inbox', 'inbox']
+    );
+    folderId = newFolderResult.rows[0].id;
+  }
+
+  // Get user ID for the recipient
+  const userResult = await Database.query('SELECT id FROM users WHERE email = $1', [to_email]);
+  const userId = userResult.rows[0].id;
+
+  // Create mail thread in recipient's inbox
+  const threadResult = await Database.query(
+    'INSERT INTO mail_threads (subject, folder_id, user_id, is_read) VALUES ($1, $2, $3, $4) RETURNING id',
+    [subject, folderId, userId, false]
+  );
+
+  const threadId = threadResult.rows[0].id;
+
+  // Create mail message in recipient's inbox
+  const messageResult = await Database.query(`
+    INSERT INTO mail_messages (
+      thread_id, from_email, from_name, to_emails, cc_emails, bcc_emails,
+      subject, body_text, body_html, is_sent, sent_at, created_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    RETURNING id
+  `, [
+    threadId,
+    from_email,
+    from_name,
+    [to_email],
+    cc,
+    bcc,
+    subject,
+    body_text,
+    body_html,
+    false, // This is received email, not sent
+    new Date(),
+    new Date()
+  ]);
+
+  const messageId = messageResult.rows[0].id;
+
+  // Handle attachments if any
+  if (attachments && attachments.length > 0) {
+    for (const attachment of attachments) {
+      await Database.query(`
+        INSERT INTO attachments (message_id, filename, original_name, mime_type, file_size, file_path)
+        VALUES ($1, $2, $3, $4, $5, $6)
+      `, [
+        messageId,
+        attachment.filename,
+        attachment.originalName,
+        attachment.mimeType,
+        attachment.fileSize,
+        attachment.filePath
+      ]);
+    }
+  }
+
+  // Emit Socket.IO notification for new email
+  if (io) {
+    io.to(`user_${userId}`).emit('new_email', {
+      folderId,
+      threadId,
+      messageId,
+      fromEmail: from_email,
+      fromName: from_name,
+      subject,
+      preview: body_text.substring(0, 100)
+    });
+    console.log(`📬 Notification sent to user ${userId} for new email`);
+  }
+
+  return { threadId, messageId };
+}
 
 // Get all folders for a user
 router.get('/folders', verifyToken, async (req: any, res) => {
@@ -43,10 +169,15 @@ router.get('/threads/:folderId', verifyToken, async (req: any, res) => {
         mm.from_name,
         mm.to_emails,
         mm.body_text,
-        mm.sent_at
+        mm.sent_at,
+        mm.is_sent
       FROM mail_threads mt
       INNER JOIN mail_messages mm ON mt.id = mm.thread_id
       WHERE mt.folder_id = $1 AND mt.user_id = $2
+      AND mm.id = (
+        SELECT MAX(id) FROM mail_messages mm2 
+        WHERE mm2.thread_id = mt.id
+      )
     `;
 
     const params: any[] = [folderId, req.user.id];
@@ -155,6 +286,47 @@ router.post('/send', verifyToken, sanitizeInput, rateLimit(20, 300000), validate
     }
 
     const user = userResult.rows[0];
+    const recipients = Array.isArray(to) ? to : [to];
+
+    // Send email to each recipient
+    for (const recipientEmail of recipients) {
+      // Check if recipient is a ChitBox user
+      const recipientResult = await Database.query(
+        'SELECT id, email, name FROM users WHERE email = $1',
+        [recipientEmail]
+      );
+
+      if (recipientResult.rows.length > 0) {
+        // Recipient is a ChitBox user - save in their inbox
+        const recipient = recipientResult.rows[0];
+        await saveIncomingEmail({
+          from_email: user.email,
+          from_name: user.name,
+          to_email: recipient.email,
+          to_name: recipient.name,
+          subject,
+          body_text: body.text || body,
+          body_html: body.html || body,
+          cc: cc ? (Array.isArray(cc) ? cc : [cc]) : [],
+          bcc: bcc ? (Array.isArray(bcc) ? bcc : [bcc]) : [],
+          attachments: attachments || []
+        });
+      } else {
+        // External recipient - queue for SMTP delivery
+        console.log(`📬 Queueing email for external recipient: ${recipientEmail}`);
+        await emailQueue.queueEmail({
+          from_email: user.email,
+          from_name: user.name,
+          to_email: recipientEmail,
+          subject,
+          body_text: body.text || body,
+          body_html: body.html || body,
+          cc_emails: cc ? (Array.isArray(cc) ? cc : [cc]) : [],
+          bcc_emails: bcc ? (Array.isArray(bcc) ? bcc : [bcc]) : [],
+          attachments: attachments || []
+        });
+      }
+    }
 
     // Get or create sent folder
     let folderResult = await Database.query(
@@ -191,7 +363,7 @@ router.post('/send', verifyToken, sanitizeInput, rateLimit(20, 300000), validate
       threadId,
       user.email,
       user.name,
-      Array.isArray(to) ? to : [to],
+      recipients,
       cc ? (Array.isArray(cc) ? cc : [cc]) : [],
       bcc ? (Array.isArray(bcc) ? bcc : [bcc]) : [],
       subject,
@@ -220,22 +392,8 @@ router.post('/send', verifyToken, sanitizeInput, rateLimit(20, 300000), validate
       }
     }
 
-    // Send email via SMTP
-    try {
-      await mailService.sendEmail({
-        from: `${user.name} <${user.email}>`,
-        to: Array.isArray(to) ? to.join(', ') : to,
-        cc: cc ? (Array.isArray(cc) ? cc.join(', ') : cc) : undefined,
-        bcc: bcc ? (Array.isArray(bcc) ? bcc.join(', ') : bcc) : undefined,
-        subject,
-        text: body.text || body,
-        html: body.html || body,
-        attachments: attachments || []
-      });
-    } catch (smtpError) {
-      console.error('SMTP error:', smtpError);
-      // Still save the message as sent in our database
-    }
+    // Email queue will handle external delivery automatically
+    console.log('📬 External emails queued for delivery');
 
     res.json({ 
       message: 'Email sent successfully',

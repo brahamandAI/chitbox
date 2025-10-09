@@ -32,6 +32,7 @@ export interface MailThread {
   sentAt?: string;
   folderId?: number;
   messages?: MailMessage[];
+  is_sent?: boolean; // Added to distinguish sent vs received emails
 }
 
 export interface MailMessage {
@@ -48,6 +49,7 @@ export interface MailMessage {
   isRead: boolean;
   isDraft: boolean;
   isSent: boolean;
+  is_sent?: boolean; // Added to distinguish sent vs received emails
   sentAt?: string;
   createdAt: string;
   attachments: Attachment[];

@@ -67,7 +67,7 @@ export function ComposeMail({
     setIsSending(true);
     try {
       await onSend({
-        to: recipients.join(', '),
+        to: recipients.length === 1 ? recipients[0] : recipients,
         subject,
         body,
         attachments: attachments.map(file => ({ filename: file.name, originalName: file.name, mimeType: file.type, fileSize: file.size, filePath: "", id: 0, messageId: 0, createdAt: new Date().toISOString() }))

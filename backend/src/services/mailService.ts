@@ -22,16 +22,32 @@ export interface EmailOptions {
 
 export class MailService {
   private transporter: nodemailer.Transporter;
+  private isProduction: boolean;
 
   constructor() {
-    // Use only local SMTP server for all emails
-    this.transporter = nodemailer.createTransport({
-      host: 'localhost',
-      port: parseInt(process.env.SMTP_SERVER_PORT || '2525'),
-      secure: false,
-      ignoreTLS: true,
-      // No auth needed for local server
-    });
+    this.isProduction = process.env.NODE_ENV === 'production';
+    
+    if (this.isProduction) {
+      // Production: Use local Postfix SMTP server
+      this.transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'localhost',
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: process.env.SMTP_SECURE === 'true', // Use TLS
+        // No authentication needed for local Postfix
+        tls: {
+          rejectUnauthorized: false,
+          ciphers: 'SSLv3'
+        }
+      });
+    } else {
+      // Development: Use local SMTP test server
+      this.transporter = nodemailer.createTransport({
+        host: 'localhost',
+        port: parseInt(process.env.SMTP_SERVER_PORT || '2525'),
+        secure: false,
+        ignoreTLS: true,
+      });
+    }
   }
 
   async sendEmail(options: EmailOptions): Promise<void> {
@@ -49,14 +65,47 @@ export class MailService {
           path: att.path,
           content: att.content,
           contentType: att.contentType
-        }))
+        })),
+        // Professional headers to avoid spam filters
+        headers: {
+          'X-Mailer': 'ChitBox Mail System',
+          'X-Priority': '3',
+          'X-MSMail-Priority': 'Normal',
+          'Importance': 'Normal',
+          'X-Report-Abuse': `Please report abuse to ${process.env.ADMIN_EMAIL || 'admin@chitbox.co'}`,
+          'List-Unsubscribe': `<mailto:unsubscribe@chitbox.co>`,
+          'Return-Path': process.env.SMTP_FROM || 'noreply@chitbox.co',
+          'Reply-To': options.from,
+          'Message-ID': `<${Date.now()}.${Math.random().toString(36).substr(2, 9)}@chitbox.co>`,
+          'Date': new Date().toUTCString()
+        },
+        // DKIM and SPF compliance
+        dkim: this.isProduction && process.env.DKIM_PRIVATE_KEY ? {
+          domainName: 'chitbox.co',
+          keySelector: 'default',
+          privateKey: process.env.DKIM_PRIVATE_KEY
+        } : undefined,
+        // Ensure proper encoding
+        encoding: 'utf8',
+        // Add tracking pixel for delivery confirmation (optional)
+        list: {
+          unsubscribe: 'https://chitbox.co/unsubscribe'
+        }
       };
 
-      console.log('📧 Sending email via local SMTP server...');
+      const serverType = this.isProduction ? 'production SMTP server' : 'local SMTP server';
+      console.log(`📧 Sending email via ${serverType}...`);
+      console.log(`📤 From: ${options.from}`);
+      console.log(`📥 To: ${options.to}`);
+      console.log(`📋 Subject: ${options.subject}`);
+      
       const info = await this.transporter.sendMail(mailOptions);
       console.log('✅ Email sent successfully:', info.messageId);
+      console.log('📊 Response:', info.response);
+      
+      return info;
     } catch (error) {
-      console.error('Error sending email:', error);
+      console.error('❌ Error sending email:', error);
       throw error;
     }
   }

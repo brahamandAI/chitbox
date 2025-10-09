@@ -11,7 +11,7 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 3005,
-        CORS_ORIGIN: 'http://localhost:3004'
+        CORS_ORIGIN: 'https://chitbox.co'
       },
       error_file: '../logs/backend-error.log',
       out_file: '../logs/backend-out.log',
@@ -27,16 +27,22 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
+      min_uptime: '10s',
+      max_restarts: 10,
+      restart_delay: 4000,
       env: {
         NODE_ENV: 'production',
         PORT: 3004,
-        NEXT_PUBLIC_API_URL: 'http://localhost:3005/api',
-        NEXT_PUBLIC_SOCKET_URL: 'http://localhost:3005'
+        NEXT_PUBLIC_API_URL: 'https://chitbox.co:3005/api',
+        NEXT_PUBLIC_SOCKET_URL: 'https://chitbox.co:3005'
       },
       error_file: '../logs/frontend-error.log',
       out_file: '../logs/frontend-out.log',
       log_file: '../logs/frontend-combined.log',
-      time: true
+      time: true,
+      kill_timeout: 5000,
+      wait_ready: true,
+      listen_timeout: 10000
     }
   ],
 

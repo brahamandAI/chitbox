@@ -1,0 +1,52 @@
+# Production Environment Configuration for External Email Delivery
+
+# Database Configuration
+DATABASE_URL=postgresql://username:password@localhost:5432/chitbox
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=chitbox
+DB_USER=username
+DB_PASSWORD=password
+
+# Server Configuration
+PORT=3005
+NODE_ENV=production
+
+# SMTP Configuration for External Email Delivery
+# Option 1: Gmail SMTP (Recommended for testing)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-gmail@gmail.com
+SMTP_PASS=your-app-password  # Generate app password in Gmail settings
+SMTP_FROM=ChitBox <noreply@chitbox.co>
+
+# Option 2: SendGrid (Recommended for production)
+# SMTP_HOST=smtp.sendgrid.net
+# SMTP_PORT=587
+# SMTP_USER=apikey
+# SMTP_PASS=your-sendgrid-api-key
+# SMTP_FROM=ChitBox <noreply@chitbox.co>
+
+# Option 3: Amazon SES (For high volume)
+# SMTP_HOST=email-smtp.us-east-1.amazonaws.com
+# SMTP_PORT=587
+# SMTP_USER=your-ses-smtp-username
+# SMTP_PASS=your-ses-smtp-password
+# SMTP_FROM=ChitBox <noreply@chitbox.co>
+
+# JWT Secret
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+
+# CORS Configuration
+CORS_ORIGIN=https://chitbox.co
+
+# Admin Configuration
+ADMIN_EMAIL=admin@chitbox.co
+
+# DKIM Configuration (Optional - for better deliverability)
+DKIM_PRIVATE_KEY=-----BEGIN RSA PRIVATE KEY-----
+# Your DKIM private key here
+-----END RSA PRIVATE KEY-----
+
+# AI Configuration (Optional)
+OPENAI_API_KEY=your-openai-api-key-here

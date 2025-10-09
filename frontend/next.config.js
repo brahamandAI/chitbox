@@ -5,8 +5,9 @@ const nextConfig = {
     domains: ['localhost'],
   },
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005/api',
-    NEXT_PUBLIC_SOCKET_URL: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3005',
+    // Use localhost for development, production URL for deployment
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://chitbox.co/api' : 'http://localhost:3005/api'),
+    NEXT_PUBLIC_SOCKET_URL: process.env.NEXT_PUBLIC_SOCKET_URL || (process.env.NODE_ENV === 'production' ? 'https://chitbox.co' : 'http://localhost:3005'),
   },
   // Fix Turbopack workspace issues
   turbopack: {

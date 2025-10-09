@@ -15,11 +15,8 @@ import {
   Settings,
   Mail,
   Archive,
-  Sun,
-  Moon,
   LogOut
 } from 'lucide-react';
-import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Folder } from '@/types';
@@ -47,8 +44,6 @@ export function Sidebar({
   onLogoutClick,
   className
 }: SidebarProps) {
-  const { theme, toggleTheme } = useTheme();
-
   const getFolderIcon = (folderType: string) => {
     switch (folderType) {
       case 'inbox':
@@ -158,20 +153,6 @@ export function Sidebar({
 
       {/* Footer */}
       <div className="p-4 border-t border-slate-700 space-y-2">
-        {/* Theme Toggle */}
-        <Button
-          onClick={toggleTheme}
-          variant="ghost"
-          className="w-full justify-start text-slate-300 hover:bg-slate-700 hover:text-yellow-400"
-        >
-          {theme === 'dark' ? (
-            <Sun className="w-5 h-5 mr-3" />
-          ) : (
-            <Moon className="w-5 h-5 mr-3" />
-          )}
-          {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-        </Button>
-
         {/* Settings */}
         <Button
           onClick={onSettingsClick}

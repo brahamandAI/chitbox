@@ -166,16 +166,25 @@ export function MailThread({
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-1">
-                    <h3 className="font-semibold text-white">{message.fromName || message.fromEmail || 'Me'}</h3>
+                    <h3 className="font-semibold text-white">
+                      {message.is_sent 
+                        ? 'Me' 
+                        : (message.fromName || message.fromEmail || 'Unknown Sender')
+                      }
+                    </h3>
                     <span className="text-sm text-slate-400">
-                      {message.toEmails && message.toEmails.length > 0 
-                        ? `to ${message.toEmails[0]}` 
-                        : 'to me'
+                      {message.is_sent 
+                        ? (message.toEmails && message.toEmails.length > 0 
+                            ? `to ${message.toEmails[0]}` 
+                            : 'to me')
+                        : (message.fromEmail && message.fromName 
+                            ? `${message.fromName} <${message.fromEmail}>`
+                            : (message.fromEmail || 'Unknown'))
                       }
                     </span>
                     {!message.isRead && (
-                      <span className="px-2 py-0.5 text-xs font-bold text-blue-600 bg-blue-100 rounded-full animate-pulse">
-                        New
+                      <span className="px-3 py-1 text-xs font-extrabold text-white bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 rounded-full shadow-lg animate-pulse ring-2 ring-yellow-400 ring-opacity-50">
+                        NEW
                       </span>
                     )}
                   </div>

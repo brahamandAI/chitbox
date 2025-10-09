@@ -5,13 +5,14 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { LoginPage } from '@/components/auth/LoginPage';
 import { RegisterPage, RegisterFormData } from '@/components/auth/RegisterPage';
 import { WelcomePage } from '@/components/auth/WelcomePage';
+import { HomePage } from '@/components/home/HomePage';
 import { User } from '@/types';
 import { authService, User as AuthUser } from '@/lib/auth';
 
 // Demo user data for immediate visual impact (commented out)
 // const _DEMO_USER: User = {
 //   id: 1,
-//   email: 'demo@chitbox.com',
+//   email: 'demo@chitbox.co',
 //   name: 'Demo User',
 //   avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face&auto=format&q=80',
 //   createdAt: new Date().toISOString()
@@ -35,7 +36,7 @@ const _DEMO_THREADS = [
     subject: 'Welcome to ChitBox - Your Modern Email Experience',
     preview: 'Thank you for choosing ChitBox! Experience the future of email with AI-powered features...',
     fromName: 'ChitBox Team',
-    fromEmail: 'team@chitbox.com',
+    fromEmail: 'team@chitbox.co',
     timestamp: '2 minutes ago',
     isRead: false,
     isStarred: true,
@@ -46,8 +47,8 @@ const _DEMO_THREADS = [
         id: 1,
         subject: 'Welcome to ChitBox - Your Modern Email Experience',
         fromName: 'ChitBox Team',
-        fromEmail: 'team@chitbox.com',
-        toEmail: 'demo@chitbox.com',
+        fromEmail: 'team@chitbox.co',
+        toEmail: 'demo@chitbox.co',
         bodyText: 'Welcome to ChitBox! We\'re excited to have you on board. ChitBox brings you a modern, AI-powered email experience with features like:\n\n✨ Smart Compose - AI-powered writing assistance\n✨ Smart Reply - One-click response suggestions\n✨ Email Summarization - TL;DR for long emails\n✨ Priority Inbox - AI-powered email organization\n✨ Tone Rewriter - Professional, friendly, or concise tones\n\nGet started by exploring the interface and trying out our AI features!',
         bodyHtml: '<p>Welcome to ChitBox! We\'re excited to have you on board. ChitBox brings you a modern, AI-powered email experience with features like:</p><ul><li>✨ Smart Compose - AI-powered writing assistance</li><li>✨ Smart Reply - One-click response suggestions</li><li>✨ Email Summarization - TL;DR for long emails</li><li>✨ Priority Inbox - AI-powered email organization</li><li>✨ Tone Rewriter - Professional, friendly, or concise tones</li></ul><p>Get started by exploring the interface and trying out our AI features!</p>',
         created_at: new Date().toISOString(),
@@ -158,9 +159,9 @@ const _DEMO_THREADS = [
 ];
 */
 
-type AuthView = 'loading' | 'login' | 'register' | 'welcome' | 'app';
+type AuthView = 'loading' | 'home' | 'login' | 'register' | 'welcome' | 'app';
 
-export default function HomePage() {
+export default function Page() {
   const [authView, setAuthView] = useState<AuthView>('loading');
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -168,7 +169,10 @@ export default function HomePage() {
   const [, setIsNewUser] = useState(false);
 
   useEffect(() => {
-    // Check if user is already authenticated
+    // Always show homepage first, then check authentication in background
+    setAuthView('home');
+    
+    // Check if user is already authenticated in background
     const checkAuth = async () => {
       try {
         const storedUser = authService.getStoredUser();
@@ -177,14 +181,11 @@ export default function HomePage() {
         if (storedUser && storedToken && authService.isAuthenticated()) {
           setUser(storedUser);
           setToken(storedToken);
-          setAuthView('app');
-        } else {
-          setAuthView('login');
+          // Don't auto-redirect to app, let user choose from homepage
         }
       } catch (error) {
         console.error('Auth check error:', error);
         authService.logout();
-        setAuthView('login');
       }
     };
 
@@ -241,8 +242,9 @@ export default function HomePage() {
     setAuthError(null);
   };
 
-  const handleBackToApp = () => {
-    setAuthView('app');
+
+  const handleGoToHome = () => {
+    setAuthView('home');
   };
 
   // Loading state
@@ -270,13 +272,26 @@ export default function HomePage() {
     );
   }
 
+  // Home view
+  if (authView === 'home') {
+    return (
+      <HomePage
+        onLogin={handleSwitchToLogin}
+        onRegister={handleSwitchToRegister}
+        onContinueToApp={() => setAuthView('app')}
+        isAuthenticated={!!user}
+        userName={user?.name}
+      />
+    );
+  }
+
   // Login view
   if (authView === 'login') {
     return (
       <LoginPage
         onLogin={handleLogin}
         onSwitchToRegister={handleSwitchToRegister}
-        onBack={handleBackToApp}
+        onBack={handleGoToHome}
         error={authError || undefined}
         className="min-h-screen"
       />
@@ -289,7 +304,7 @@ export default function HomePage() {
       <RegisterPage
         onRegister={handleRegister}
         onSwitchToLogin={handleSwitchToLogin}
-        onBack={handleBackToApp}
+        onBack={handleGoToHome}
         error={authError || undefined}
         className="min-h-screen"
       />
@@ -329,14 +344,11 @@ export default function HomePage() {
     );
   }
 
-  // Fallback - redirect to login
+  // Fallback - redirect to home
   return (
-    <LoginPage
-      onLogin={handleLogin}
-      onSwitchToRegister={handleSwitchToRegister}
-      onBack={handleBackToApp}
-      error={authError || undefined}
-      className="min-h-screen"
+    <HomePage
+      onLogin={handleSwitchToLogin}
+      onRegister={handleSwitchToRegister}
     />
   );
 }

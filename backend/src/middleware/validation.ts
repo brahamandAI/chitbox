@@ -83,6 +83,11 @@ export const validateRegistration = (req: Request, res: Response, next: NextFunc
     errors.push('Please provide a valid email address');
   }
 
+  // Enforce @chitbox.co domain for registration
+  if (email && !email.toLowerCase().endsWith('@chitbox.co')) {
+    errors.push('You can only register with a @chitbox.co email address');
+  }
+
   const passwordValidation = validatePassword(password);
   if (!passwordValidation.isValid) {
     errors.push(...passwordValidation.errors);
