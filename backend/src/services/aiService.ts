@@ -193,14 +193,6 @@ Provide a concise thread summary:`;
     ];
   }
 
-  private getFallbackSummary(content: string): string {
-    const words = content.split(' ');
-    if (words.length <= 20) return content;
-    
-    const firstSentence = content.split('.')[0];
-    const lastSentence = content.split('.').slice(-2).join('.');
-    return `${firstSentence}. ${lastSentence}`;
-  }
 
   private getFallbackThreadSummary(messages: Array<{ content: string; sender: string }>): string {
     const senders = [...new Set(messages.map(m => m.sender))];
@@ -326,6 +318,191 @@ Provide only the rewritten email without any additional commentary:`;
     }
   }
 
+  // AI Polish - Improve writing quality
+  async polishText(content: string): Promise<string> {
+    if (!this.isAvailable()) {
+      return this.getFallbackPolish(content);
+    }
+
+    try {
+      const prompt = `Please polish and improve the following email text to make it more professional, clear, and engaging. 
+      Fix any grammatical issues, improve sentence structure, and enhance clarity while maintaining the original meaning.
+
+      Original text: "${content}"
+
+      Provide only the polished version without explanations:`;
+
+      const completion = await this.openai!.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional writing assistant that polishes text for clarity and professionalism."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_tokens: 500,
+        temperature: 0.3,
+      });
+
+      return completion.choices[0]?.message?.content || this.getFallbackPolish(content);
+    } catch (error) {
+      console.error('Text polishing error:', error);
+      return this.getFallbackPolish(content);
+    }
+  }
+
+  // AI Summarize - Create concise summary
+  async summarizeText(content: string): Promise<string> {
+    if (!this.isAvailable()) {
+      return this.getFallbackSummary(content);
+    }
+
+    try {
+      const prompt = `Please create a concise summary of the following email content. 
+      Extract the key points and main message in 2-3 sentences.
+
+      Email content: "${content}"
+
+      Provide only the summary without explanations:`;
+
+      const completion = await this.openai!.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional assistant that creates concise summaries of email content."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_tokens: 200,
+        temperature: 0.2,
+      });
+
+      return completion.choices[0]?.message?.content || this.getFallbackSummary(content);
+    } catch (error) {
+      console.error('Text summarization error:', error);
+      return this.getFallbackSummary(content);
+    }
+  }
+
+  // AI Formalize - Make text more formal
+  async formalizeText(content: string): Promise<string> {
+    if (!this.isAvailable()) {
+      return this.getFallbackFormalize(content);
+    }
+
+    try {
+      const prompt = `Please rewrite the following text in a more formal, professional tone suitable for business communication.
+      Use proper business language and formal structure.
+
+      Original text: "${content}"
+
+      Provide only the formalized version without explanations:`;
+
+      const completion = await this.openai!.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional writing assistant that converts informal text to formal business language."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_tokens: 400,
+        temperature: 0.3,
+      });
+
+      return completion.choices[0]?.message?.content || this.getFallbackFormalize(content);
+    } catch (error) {
+      console.error('Text formalization error:', error);
+      return this.getFallbackFormalize(content);
+    }
+  }
+
+  // AI Elaborate - Expand and add detail
+  async elaborateText(content: string): Promise<string> {
+    if (!this.isAvailable()) {
+      return this.getFallbackElaborate(content);
+    }
+
+    try {
+      const prompt = `Please elaborate and expand the following text by adding more detail, context, and explanation.
+      Make it more comprehensive while maintaining clarity and professionalism.
+
+      Original text: "${content}"
+
+      Provide only the elaborated version without explanations:`;
+
+      const completion = await this.openai!.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional writing assistant that expands text with relevant details and context."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_tokens: 600,
+        temperature: 0.4,
+      });
+
+      return completion.choices[0]?.message?.content || this.getFallbackElaborate(content);
+    } catch (error) {
+      console.error('Text elaboration error:', error);
+      return this.getFallbackElaborate(content);
+    }
+  }
+
+  // AI Shorten - Make text more concise
+  async shortenText(content: string): Promise<string> {
+    if (!this.isAvailable()) {
+      return this.getFallbackShorten(content);
+    }
+
+    try {
+      const prompt = `Please make the following text more concise and to the point.
+      Remove unnecessary words, combine sentences, and keep only the essential information.
+
+      Original text: "${content}"
+
+      Provide only the shortened version without explanations:`;
+
+      const completion = await this.openai!.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional writing assistant that makes text more concise while preserving key information."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_tokens: 300,
+        temperature: 0.2,
+      });
+
+      return completion.choices[0]?.message?.content || this.getFallbackShorten(content);
+    } catch (error) {
+      console.error('Text shortening error:', error);
+      return this.getFallbackShorten(content);
+    }
+  }
+
   // Fallback methods for when AI is not available
   private getFallbackClassification(emailContent: string, subject: string, sender: string): {
     category: 'important' | 'social' | 'promotions' | 'spam';
@@ -361,6 +538,126 @@ Provide only the rewritten email without any additional commentary:`;
       default:
         return content;
     }
+  }
+
+  private getFallbackPolish(content: string): string {
+    // Basic polish fallback - fix common issues
+    let polished = content
+      .replace(/\bi\b/g, 'I')
+      .replace(/\bcan't\b/g, 'cannot')
+      .replace(/\bwon't\b/g, 'will not')
+      .replace(/\bdidn't\b/g, 'did not')
+      .replace(/\bdon't\b/g, 'do not')
+      .replace(/\bdoesn't\b/g, 'does not')
+      .replace(/\bhaven't\b/g, 'have not')
+      .replace(/\bhasn't\b/g, 'has not')
+      .replace(/\bhadn't\b/g, 'had not')
+      .replace(/\bwouldn't\b/g, 'would not')
+      .replace(/\bshouldn't\b/g, 'should not')
+      .replace(/\bcouldn't\b/g, 'could not');
+    
+    return polished;
+  }
+
+  private getFallbackSummary(content: string): string {
+    const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    if (sentences.length <= 2) {
+      return content;
+    }
+    return sentences.slice(0, 2).join('. ') + '.';
+  }
+
+  private getFallbackFormalize(content: string): string {
+    let formal = content
+      .replace(/hi\b/gi, 'Hello')
+      .replace(/hey\b/gi, 'Hello')
+      .replace(/thanks\b/gi, 'Thank you')
+      .replace(/thx\b/gi, 'Thank you')
+      .replace(/pls\b/gi, 'please')
+      .replace(/plz\b/gi, 'please')
+      .replace(/u\b/gi, 'you')
+      .replace(/ur\b/gi, 'your')
+      .replace(/yr\b/gi, 'your')
+      .replace(/btw\b/gi, 'by the way')
+      .replace(/asap\b/gi, 'as soon as possible');
+    
+    return formal;
+  }
+
+  private getFallbackElaborate(content: string): string {
+    // Add some basic elaboration
+    const words = content.split(' ');
+    if (words.length < 20) {
+      return content + ' Please let me know if you need any additional information or have any questions.';
+    }
+    return content;
+  }
+
+  private getFallbackShorten(content: string): string {
+    const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    if (sentences.length <= 2) {
+      return content;
+    }
+    return sentences.slice(0, 2).join('. ') + '.';
+  }
+
+  // Chat with email content - Answer questions about email
+  async chatWithEmail(question: string, context?: string, subject?: string, sender?: string): Promise<string> {
+    if (!this.isAvailable()) {
+      return this.getFallbackChatResponse(question, context);
+    }
+
+    try {
+      const prompt = `You are an AI assistant helping with email analysis. Answer the user's question based on the email content provided.
+
+Email Subject: ${subject || 'No subject'}
+From: ${sender || 'Unknown sender'}
+Email Content: ${context || 'No content provided'}
+
+User Question: ${question}
+
+Please provide a helpful and accurate response based on the email content. If the question cannot be answered from the email content, please say so politely.`;
+
+      const completion = await this.openai!.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "You are a helpful email assistant. Answer questions about email content accurately and concisely."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_tokens: 300,
+        temperature: 0.7,
+      });
+
+      const response = completion.choices[0]?.message?.content;
+      return response || this.getFallbackChatResponse(question, context);
+    } catch (error) {
+      console.error('Chat with email error:', error);
+      return this.getFallbackChatResponse(question, context);
+    }
+  }
+
+  private getFallbackChatResponse(question: string, context?: string): string {
+    const lowerQuestion = question.toLowerCase();
+    
+    if (lowerQuestion.includes('what') && lowerQuestion.includes('about')) {
+      return 'Based on the email content, I can see this appears to be an important message. However, I need more context to provide a detailed answer.';
+    }
+    
+    if (lowerQuestion.includes('urgent') || lowerQuestion.includes('important')) {
+      return 'I would need to analyze the full email content to determine the urgency or importance level.';
+    }
+    
+    if (lowerQuestion.includes('action') || lowerQuestion.includes('next step')) {
+      return 'To identify the required actions or next steps, I would need to review the complete email content.';
+    }
+    
+    return 'I apologize, but I cannot provide a detailed answer based on the available information. Please ensure the email content is properly loaded.';
   }
 }
 

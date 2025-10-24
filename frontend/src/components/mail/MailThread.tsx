@@ -14,7 +14,11 @@ import {
   Clock,
   User,
   Mail,
-  Circle
+  Circle,
+  Paperclip,
+  Download,
+  Image as ImageIcon,
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SmartReply } from '../ai/SmartReply';
@@ -249,22 +253,72 @@ export function MailThread({
 
             <div className="prose prose-sm max-w-none mb-6">
               <div className="text-slate-300 leading-relaxed">
-                {message.bodyHtml ? (
-                  <div dangerouslySetInnerHTML={{ __html: message.bodyHtml }} />
+                {message.bodyText && message.bodyText.trim() ? (
+                  <div className="whitespace-pre-wrap">{message.bodyText}</div>
+                ) : message.bodyHtml ? (
+                  <div 
+                    className="prose-invert"
+                    dangerouslySetInnerHTML={{ 
+                      __html: message.bodyHtml.replace(/<[^>]*>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+                    }} 
+                  />
                 ) : (
-                  <div>
-                    {message.bodyText && message.bodyText.trim() ? (
-                      <p className="whitespace-pre-wrap">{message.bodyText}</p>
-                    ) : (
-                      <div className="text-slate-400 italic text-center py-8 bg-slate-700/30 rounded-lg">
-                        <p>No content available</p>
-                        <p className="text-sm mt-2">This email contains no text content.</p>
-                      </div>
-                    )}
+                  <div className="text-slate-400 italic text-center py-8 bg-slate-700/30 rounded-lg">
+                    <p>No content available</p>
+                    <p className="text-sm mt-2">This email contains no text content.</p>
                   </div>
                 )}
               </div>
             </div>
+
+            {/* Attachments */}
+            {message.attachments && message.attachments.length > 0 && (
+              <div className="mb-6">
+                <div className="flex items-center space-x-2 mb-3">
+                  <Paperclip className="w-4 h-4 text-slate-400" />
+                  <h4 className="text-sm font-medium text-slate-300">Attachments ({message.attachments.length})</h4>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {message.attachments.map((attachment, index) => {
+                    const isImage = attachment.mimeType?.startsWith('image/');
+                    const fileSize = attachment.fileSize ? (attachment.fileSize / 1024).toFixed(1) + ' KB' : 'Unknown size';
+                    
+                    return (
+                      <div key={index} className="flex items-center space-x-3 p-3 bg-slate-800/50 rounded-lg border border-slate-600 hover:bg-slate-700/50 transition-colors">
+                        <div className="flex-shrink-0">
+                          {isImage ? (
+                            <ImageIcon className="w-8 h-8 text-green-400" />
+                          ) : (
+                            <FileText className="w-8 h-8 text-blue-400" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-white truncate">
+                            {attachment.filename || attachment.originalName || `Attachment ${index + 1}`}
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            {fileSize} • {attachment.mimeType || 'Unknown type'}
+                          </p>
+                        </div>
+                        <div className="flex-shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              // Handle download/view attachment
+                              console.log('Download attachment:', attachment);
+                            }}
+                            className="text-slate-400 hover:text-blue-400 hover:bg-slate-600"
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* AI Features for this specific message */}
             <div className="mb-6">

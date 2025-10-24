@@ -24,12 +24,21 @@ import { useTheme } from '@/contexts/ThemeContext';
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+    avatar?: string;
+    profession?: string;
+    country?: string;
+  } | null;
   className?: string;
 }
 
 export function SettingsModal({
   isOpen,
   onClose,
+  user,
   className
 }: SettingsModalProps) {
   const { theme, toggleTheme } = useTheme();
@@ -37,6 +46,19 @@ export function SettingsModal({
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Profile form states
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [profession, setProfession] = useState(user?.profession || '');
+  const [country, setCountry] = useState(user?.country || '');
+  
+  // Password change states
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
@@ -46,6 +68,39 @@ export function SettingsModal({
     { id: 'email', label: 'Email', icon: Mail },
     { id: 'privacy', label: 'Privacy', icon: Lock }
   ];
+
+  const handlePasswordChange = async () => {
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    // Validate passwords
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError('All fields are required');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters');
+      return;
+    }
+
+    try {
+      // TODO: Add API call to change password
+      // const response = await apiClient.changePassword(currentPassword, newPassword);
+      setPasswordSuccess('Password changed successfully!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      console.error('Password change error:', error);
+      setPasswordError('Failed to change password. Please check your current password.');
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -99,36 +154,45 @@ export function SettingsModal({
               <div className="space-y-6">
                 <h3 className="text-xl font-semibold text-white">Profile Information</h3>
                 
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">First Name</label>
-                    <Input
-                      placeholder="John"
-                      className="bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Last Name</label>
-                    <Input
-                      placeholder="Doe"
-                      className="bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
                   <Input
-                    placeholder="john.doe@example.com"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your name"
                     className="bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Bio</label>
-                  <textarea
-                    placeholder="Tell us about yourself..."
-                    className="w-full h-24 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none resize-none"
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                  <Input
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your.email@example.com"
+                    disabled
+                    className="bg-slate-700 border-slate-600 text-slate-400 placeholder-slate-400 cursor-not-allowed"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Email cannot be changed</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Profession</label>
+                  <Input
+                    value={profession}
+                    onChange={(e) => setProfession(e.target.value)}
+                    placeholder="Your profession"
+                    className="bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Country</label>
+                  <Input
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    placeholder="Your country"
+                    className="bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500"
                   />
                 </div>
 
@@ -184,12 +248,26 @@ export function SettingsModal({
               <div className="space-y-6">
                 <h3 className="text-xl font-semibold text-white">Security Settings</h3>
                 
+                {passwordError && (
+                  <div className="p-4 bg-red-500/20 border border-red-500/30 rounded-xl">
+                    <p className="text-sm text-red-400 font-medium">{passwordError}</p>
+                  </div>
+                )}
+                
+                {passwordSuccess && (
+                  <div className="p-4 bg-green-500/20 border border-green-500/30 rounded-xl">
+                    <p className="text-sm text-green-400 font-medium">{passwordSuccess}</p>
+                  </div>
+                )}
+                
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">Current Password</label>
                     <div className="relative">
                       <Input
                         type={showPassword ? "text" : "password"}
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
                         placeholder="Enter current password"
                         className="bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 pr-10"
                       />
@@ -208,7 +286,9 @@ export function SettingsModal({
                     <div className="relative">
                       <Input
                         type={showNewPassword ? "text" : "password"}
-                        placeholder="Enter new password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter new password (min 8 characters)"
                         className="bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 pr-10"
                       />
                       <button
@@ -226,6 +306,8 @@ export function SettingsModal({
                     <div className="relative">
                       <Input
                         type={showConfirmPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Confirm new password"
                         className="bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 pr-10"
                       />
@@ -240,7 +322,10 @@ export function SettingsModal({
                   </div>
                 </div>
 
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Button 
+                  onClick={handlePasswordChange}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
                   <Check className="w-4 h-4 mr-2" />
                   Update Password
                 </Button>

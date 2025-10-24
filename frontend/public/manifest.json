@@ -1,0 +1,27 @@
+{
+  "name": "ChitBox - AI Mail Server",
+  "short_name": "ChitBox",
+  "description": "Modern AI-powered email server with smart compose, CC/BCC, and intelligent email management",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/chitbox-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/chitbox-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/chitbox-logo.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    }
+  ]
+}

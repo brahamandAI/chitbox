@@ -14,8 +14,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Chitbox-Your Modern Email",
-  description: "A modern email client built with Next.js",
+  title: "ChitBox - AI Mail Server",
+  description: "Modern AI-powered email server with smart compose, CC/BCC, and intelligent email management",
+  icons: {
+    icon: '/chitbox-logo.png',
+    apple: '/chitbox-logo.png',
+    shortcut: '/favicon.ico',
+  },
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({

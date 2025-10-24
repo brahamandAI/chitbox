@@ -49,4 +49,3 @@ echo "  postconf smtpd_tls_security_level"
 echo ""
 echo "🧪 Test sending an email from ChitBox to Gmail."
 echo "   The 'not encrypted' warning should now be gone!"
-

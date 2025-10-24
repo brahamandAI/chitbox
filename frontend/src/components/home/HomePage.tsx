@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Shield, Zap, Brain, Mail, Lock, Sparkles, Users, Globe, CheckCircle, Star, MessageSquare, TrendingUp } from 'lucide-react';
+import { ArrowRight, Shield, Zap, Brain, Lock, Sparkles, Users, Globe, CheckCircle, Star, MessageSquare, TrendingUp } from 'lucide-react';
 import { ChitboxLogo } from '@/components/ui/ChitboxLogo';
 
 interface HomePageProps {

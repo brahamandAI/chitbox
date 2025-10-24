@@ -252,7 +252,7 @@ router.get('/threads/:threadId/messages', verifyToken, async (req: any, res) => 
     const messagesWithAttachments = await Promise.all(
       messages.rows.map(async (message: any) => {
         const attachments = await Database.query(
-          'SELECT id, filename, original_name, mime_type, file_size FROM attachments WHERE message_id = $1',
+          'SELECT id, filename, original_name, mime_type, file_size, file_path FROM attachments WHERE message_id = $1',
           [message.id]
         );
         return { ...message, attachments: attachments.rows };
@@ -540,6 +540,44 @@ router.patch('/threads/:threadId/star', verifyToken, async (req: any, res) => {
     res.json({ message: 'Thread updated successfully' });
   } catch (error) {
     console.error('Update thread error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get attachment content
+router.get('/attachments/:attachmentId', verifyToken, async (req: any, res) => {
+  try {
+    const { attachmentId } = req.params;
+
+    // Get attachment info and verify user access
+    const attachmentResult = await Database.query(`
+      SELECT 
+        a.id, a.filename, a.original_name, a.mime_type, a.file_size, a.file_path,
+        mm.thread_id, mt.user_id
+      FROM attachments a
+      INNER JOIN mail_messages mm ON a.message_id = mm.id
+      INNER JOIN mail_threads mt ON mm.thread_id = mt.id
+      WHERE a.id = $1 AND mt.user_id = $2
+    `, [attachmentId, req.user.id]);
+
+    if (attachmentResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Attachment not found' });
+    }
+
+    const attachment = attachmentResult.rows[0];
+
+    // For now, we're not storing file content in the database
+    // This endpoint is ready for when you implement file storage
+    res.json({
+      id: attachment.id,
+      filename: attachment.filename || attachment.original_name,
+      mimeType: attachment.mime_type,
+      fileSize: attachment.file_size,
+      message: 'Attachment metadata retrieved. File content storage not implemented yet.'
+    });
+
+  } catch (error) {
+    console.error('Get attachment error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

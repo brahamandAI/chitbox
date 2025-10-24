@@ -191,6 +191,10 @@ class ApiClient {
     });
   }
 
+  async getAttachment(attachmentId: number) {
+    return this.request(`/mail/attachments/${attachmentId}`);
+  }
+
   // AI endpoints
   async smartCompose(text: string, context?: string) {
     return this.request('/ai/smart-compose', {
@@ -213,6 +217,62 @@ class ApiClient {
     });
   }
 
+  async summarizeText(content: string) {
+    return this.request('/ai/summarize-text', {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async spellCheck(text: string) {
+    return this.request('/ai/spell-check', {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+    });
+  }
+
+  async polishText(content: string) {
+    return this.request('/ai/polish', {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async formalizeText(content: string) {
+    return this.request('/ai/formalize', {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async elaborateText(content: string) {
+    return this.request('/ai/elaborate', {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async shortenText(content: string) {
+    return this.request('/ai/shorten', {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async rewriteEmailTone(content: string, tone: string, context?: string) {
+    return this.request('/ai/rewrite-tone', {
+      method: 'POST',
+      body: JSON.stringify({ content, tone, context }),
+    });
+  }
+
+  async chatWithAI(question: string, context?: string, subject?: string, sender?: string) {
+    return this.request('/ai/chat', {
+      method: 'POST',
+      body: JSON.stringify({ question, context, subject, sender }),
+    });
+  }
+
   async summarizeThread(messages: Array<{ content: string; sender: string; timestamp: string }>) {
     return this.request('/ai/summarize-thread', {
       method: 'POST',
@@ -231,12 +291,6 @@ class ApiClient {
     });
   }
 
-  async rewriteEmailTone(content: string, tone: 'professional' | 'friendly' | 'concise', context?: string) {
-    return this.request('/ai/rewrite-tone', {
-      method: 'POST',
-      body: JSON.stringify({ content, tone, context }),
-    });
-  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);

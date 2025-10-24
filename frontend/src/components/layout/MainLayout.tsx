@@ -2,9 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
+import { TopHeader } from './TopHeader';
 import { MailList } from '../mail/MailList';
-import { MailThread } from '../mail/MailThread';
-import { ComposeMail } from '../mail/ComposeMail';
+// import { MailThread } from '../mail/MailThread'; // Removed - using MailBody instead
+import { MailBody } from '../mail/MailBody';
+import { AIAssistant } from '../ai/AIAssistant';
+import { ComposeMailV2 } from '../mail/ComposeMailV2';
 import { PriorityInbox } from '../ai/PriorityInbox';
 import { SettingsModal } from '../settings/SettingsModal';
 import { Folder, MailThread as MailThreadType, MailMessage, SendEmailRequest } from '@/types';
@@ -25,7 +28,7 @@ interface MainLayoutProps {
   className?: string;
 }
 
-export function MainLayout({ user: _user, token, onLogout, demoFolders, demoThreads, className }: MainLayoutProps) {
+export function MainLayout({ token, onLogout, demoFolders, demoThreads, className }: MainLayoutProps) {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
   const [threads, setThreads] = useState<MailThreadType[]>([]);
@@ -36,6 +39,15 @@ export function MainLayout({ user: _user, token, onLogout, demoFolders, demoThre
   const [replyTo, setReplyTo] = useState<{to: string; subject: string; body: string} | null>(null);
   const [showPriorityInbox, setShowPriorityInbox] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showChitAI, setShowChitAI] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{
+    id: number;
+    name: string;
+    email: string;
+    avatar?: string;
+    profession?: string;
+    country?: string;
+  } | null>(null);
 
   // Set token in API client
   useEffect(() => {
@@ -43,6 +55,39 @@ export function MainLayout({ user: _user, token, onLogout, demoFolders, demoThre
       apiClient.setToken(token);
     }
   }, [token]);
+
+  // Fetch current user data
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userData = await apiClient.getCurrentUser() as {
+          id: number;
+          name: string;
+          email: string;
+          avatar?: string;
+          profession?: string;
+          country?: string;
+        };
+        setCurrentUser(userData);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    if (token && !demoThreads) {
+      fetchUserData();
+    } else if (demoThreads) {
+      // Set demo user for demo mode
+      setCurrentUser({
+        id: 1,
+        name: "Demo User",
+        email: "demo@chitbox.co",
+        avatar: undefined,
+        profession: "Developer",
+        country: "United States"
+      });
+    }
+  }, [token, demoThreads]);
 
   // Initialize socket connection (only for non-demo mode)
   useEffect(() => {
@@ -403,63 +448,93 @@ export function MainLayout({ user: _user, token, onLogout, demoFolders, demoThre
   };
 
   return (
-    <div className={`flex h-screen bg-slate-900 text-white dark-theme ${className}`}>
-      {/* Sidebar */}
-      <div className="w-64 flex-shrink-0 sidebar-container">
-        <Sidebar
-          folders={folders}
-          selectedFolderId={selectedFolderId}
-          onFolderSelect={handleFolderSelect}
-          onComposeClick={() => setIsComposeOpen(true)}
-          showPriorityInbox={showPriorityInbox}
-          onPriorityInboxToggle={() => setShowPriorityInbox(!showPriorityInbox)}
-          onSettingsClick={() => setIsSettingsOpen(true)}
-          onLogoutClick={onLogout}
-        />
-      </div>
+    <div className={`flex flex-col h-screen bg-slate-900 text-white dark-theme ${className}`}>
+      {/* Top Header */}
+      <TopHeader
+        user={currentUser}
+        onSettingsClick={() => setIsSettingsOpen(true)}
+        onLogoutClick={onLogout}
+        onChitAIClick={() => setShowChitAI(!showChitAI)}
+        showChitAI={showChitAI}
+      />
 
-      {/* Main Content */}
-      <div className="flex-1 flex">
-        {/* Mail List - Takes full width when no thread selected */}
-        <div className={`${selectedThreadId ? 'w-1/2' : 'w-full'} border-r border-slate-700 main-content`}>
-          {showPriorityInbox ? (
-            <PriorityInbox
-              threads={threads}
-              onThreadSelect={handleThreadSelect}
-              onStarToggle={handleStarToggle}
-              onMarkAsRead={handleMarkAsRead}
-            />
+      {/* Main Content Area */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <div className="w-64 flex-shrink-0 sidebar-container">
+          <Sidebar
+            folders={folders}
+            selectedFolderId={selectedFolderId}
+            onFolderSelect={handleFolderSelect}
+            onComposeClick={() => setIsComposeOpen(true)}
+            showPriorityInbox={showPriorityInbox}
+            onPriorityInboxToggle={() => setShowPriorityInbox(!showPriorityInbox)}
+          />
+        </div>
+
+        {/* Main Content - Proper Gmail Style Layout */}
+        <div className="flex-1 flex h-full overflow-hidden">
+          {!selectedThreadId ? (
+            /* Default: Two sections - Sidebar + Mail List (full width) */
+            <div className="w-full border-r border-slate-700 main-content h-full overflow-hidden">
+              {showPriorityInbox ? (
+                <PriorityInbox
+                  threads={threads}
+                  onThreadSelect={handleThreadSelect}
+                  onStarToggle={handleStarToggle}
+                  onMarkAsRead={handleMarkAsRead}
+                />
+              ) : (
+                <MailList
+                  threads={threads}
+                  isLoading={isLoading}
+                  onThreadSelect={handleThreadSelect}
+                  onStarToggle={handleStarToggle}
+                  onMarkAsRead={handleMarkAsRead}
+                  onDelete={handleDelete}
+                  onRefresh={handleRefresh}
+                />
+              )}
+            </div>
           ) : (
-            <MailList
-              threads={threads}
-              isLoading={isLoading}
-              onThreadSelect={handleThreadSelect}
-              onStarToggle={handleStarToggle}
-              onMarkAsRead={handleMarkAsRead}
-              onDelete={handleDelete}
-              onRefresh={handleRefresh}
-            />
+            /* Email Selected: Sidebar + Email Body (full width) OR Sidebar + Email Body + Chit AI */
+            <>
+              {/* Email Body - Takes full width when no Chit AI, or 2/3 when Chit AI is open */}
+              <div className={`border-r border-slate-700 main-content h-full overflow-hidden ${
+                showChitAI ? 'w-[67%]' : 'w-full'
+              }`}>
+                {messages.length > 0 && (
+                  <MailBody
+                    message={messages[messages.length - 1]}
+                    onStarToggle={handleStarToggle}
+                    onReply={handleReply}
+                    onForward={handleForward}
+                    onBack={() => {
+                      setSelectedThreadId(null);
+                      setShowChitAI(false);
+                    }}
+                  />
+                )}
+              </div>
+
+              {/* Chit AI - Right section (only when activated) */}
+              {showChitAI && (
+                <div className="w-[33%] min-w-[300px] main-content h-full overflow-hidden">
+                  <AIAssistant
+                    emailContent={messages.length > 0 ? (messages[messages.length - 1].bodyText || messages[messages.length - 1].bodyHtml || '') : ''}
+                    emailSubject={messages.length > 0 ? messages[messages.length - 1].subject : ''}
+                    senderName={messages.length > 0 ? (messages[messages.length - 1].fromName || messages[messages.length - 1].fromEmail) : ''}
+                    onClose={() => setShowChitAI(false)}
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
 
-        {/* Mail Thread - Only shows when a thread is selected */}
-        {selectedThreadId && (
-          <div className="w-1/2 main-content">
-            <MailThread
-              messages={messages}
-              onStarToggle={handleStarToggle}
-              onReply={handleReply}
-              onForward={handleForward}
-              onMarkAsRead={handleMarkAsRead}
-              onBack={() => setSelectedThreadId(null)}
-            />
-          </div>
-        )}
-      </div>
-
       {/* Compose Modal */}
       {isComposeOpen && (
-        <ComposeMail
+        <ComposeMailV2
           isOpen={isComposeOpen}
           onClose={() => {
             setIsComposeOpen(false);
@@ -470,11 +545,13 @@ export function MainLayout({ user: _user, token, onLogout, demoFolders, demoThre
         />
       )}
 
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
+        {/* Settings Modal */}
+        <SettingsModal
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          user={currentUser}
+        />
+      </div>
     </div>
   );
 }

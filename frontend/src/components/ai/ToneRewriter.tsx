@@ -2,22 +2,25 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Type, Wand2 } from 'lucide-react';
+import { Sparkles, Type, Wand2, X, Minus, Maximize2 } from 'lucide-react';
 
 interface ToneRewriterProps {
   initialContent?: string;
   onContentChange: (content: string) => void;
+  onClose?: () => void;
   className?: string;
 }
 
 export function ToneRewriter({ 
   initialContent, 
-  onContentChange, 
+  onContentChange,
+  onClose,
   className 
 }: ToneRewriterProps) {
   const [selectedTone, setSelectedTone] = useState<'professional' | 'friendly' | 'concise'>('professional');
   const [isLoading, setIsLoading] = useState(false);
   const [rewrittenContent, setRewrittenContent] = useState<string>('');
+  const [isMinimized, setIsMinimized] = useState(false);
 
   const tones = [
     { key: 'professional', label: 'Professional', icon: '👔' },
@@ -44,24 +47,56 @@ export function ToneRewriter({
   };
 
   return (
-    <div className={`bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-4 border border-slate-600 ${className}`}>
-      <div className="flex items-center justify-between mb-4">
+    <div className={`bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl border border-slate-600 transition-all duration-300 ${className}`}>
+      <div className="flex items-center justify-between p-4">
         <div className="flex items-center space-x-2">
           <Sparkles className="w-5 h-5 text-purple-400" />
           <h3 className="font-semibold text-white">Tone Rewriter</h3>
         </div>
-        <Button
-          onClick={rewriteContent}
-          disabled={isLoading || !initialContent || !initialContent.trim()}
-          size="sm"
-          className="bg-purple-500 hover:bg-purple-600 text-white font-semibold"
-        >
-          {isLoading ? 'Rewriting...' : 'Rewrite Tone'}
-        </Button>
+        
+        <div className="flex items-center space-x-2">
+          {!isMinimized && (
+            <Button
+              onClick={rewriteContent}
+              disabled={isLoading || !initialContent || !initialContent.trim()}
+              size="sm"
+              className="bg-purple-500 hover:bg-purple-600 text-white font-semibold"
+            >
+              {isLoading ? 'Rewriting...' : 'Rewrite Tone'}
+            </Button>
+          )}
+          
+          {/* Minimize/Maximize button */}
+          <Button
+            onClick={() => setIsMinimized(!isMinimized)}
+            variant="ghost"
+            size="sm"
+            className="text-slate-400 hover:text-purple-400 hover:bg-purple-500/10 p-2 rounded-xl transition-all duration-200"
+            title={isMinimized ? 'Expand' : 'Minimize'}
+          >
+            {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
+          </Button>
+          
+          {/* Close button */}
+          {onClose && (
+            <Button
+              onClick={onClose}
+              variant="ghost"
+              size="sm"
+              className="text-slate-400 hover:text-red-400 hover:bg-red-500/10 p-2 rounded-xl transition-all duration-200"
+              title="Close"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Tone Selection */}
-      <div className="mb-4">
+      {/* Content - only show when not minimized */}
+      {!isMinimized && (
+        <div className="px-4 pb-4">
+          {/* Tone Selection */}
+          <div className="mb-4">
         <p className="text-sm text-slate-300 mb-2">Select tone:</p>
         <div className="flex space-x-2">
           {tones.map((tone) => (
@@ -104,6 +139,8 @@ export function ToneRewriter({
               Apply Changes
             </Button>
           </div>
+        </div>
+          )}
         </div>
       )}
     </div>

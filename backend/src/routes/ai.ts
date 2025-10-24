@@ -1,6 +1,7 @@
 import express from 'express';
 import { verifyToken } from '../middleware/session';
 import { aiService } from '../services/aiService';
+import { spellCheckService } from '../services/spellCheckService';
 
 const router = express.Router();
 
@@ -156,6 +157,181 @@ router.post('/rewrite-tone', verifyToken, async (req: any, res) => {
   }
 });
 
+// Spell Check and Grammar Check
+router.post('/spell-check', verifyToken, async (req: any, res) => {
+  try {
+    const { text } = req.body;
+
+    if (!text || typeof text !== 'string') {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+
+    const result = await spellCheckService.checkText(text);
+
+    res.json(result);
+  } catch (error) {
+    console.error('Spell check error:', error);
+    res.status(500).json({ error: 'Failed to check spelling and grammar' });
+  }
+});
+
+// AI Polish - Improve writing quality
+router.post('/polish', verifyToken, async (req: any, res) => {
+  try {
+    const { content } = req.body;
+
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ error: 'Content is required' });
+    }
+
+    const polished = await aiService.polishText(content);
+
+    res.json({
+      original: content,
+      polished,
+      type: 'polish'
+    });
+  } catch (error) {
+    console.error('Text polishing error:', error);
+    res.status(500).json({ error: 'Failed to polish text' });
+  }
+});
+
+// AI Summarize - Create concise summary
+router.post('/summarize-text', verifyToken, async (req: any, res) => {
+  try {
+    const { content } = req.body;
+
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ error: 'Content is required' });
+    }
+
+    const summary = await aiService.summarizeText(content);
+
+    res.json({
+      original: content,
+      summary,
+      type: 'summarize'
+    });
+  } catch (error) {
+    console.error('Text summarization error:', error);
+    res.status(500).json({ error: 'Failed to summarize text' });
+  }
+});
+
+// AI Formalize - Make text more formal
+router.post('/formalize', verifyToken, async (req: any, res) => {
+  try {
+    const { content } = req.body;
+
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ error: 'Content is required' });
+    }
+
+    const formalized = await aiService.formalizeText(content);
+
+    res.json({
+      original: content,
+      formalized,
+      type: 'formalize'
+    });
+  } catch (error) {
+    console.error('Text formalization error:', error);
+    res.status(500).json({ error: 'Failed to formalize text' });
+  }
+});
+
+// AI Elaborate - Expand and add detail
+router.post('/elaborate', verifyToken, async (req: any, res) => {
+  try {
+    const { content } = req.body;
+
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ error: 'Content is required' });
+    }
+
+    const elaborated = await aiService.elaborateText(content);
+
+    res.json({
+      original: content,
+      elaborated,
+      type: 'elaborate'
+    });
+  } catch (error) {
+    console.error('Text elaboration error:', error);
+    res.status(500).json({ error: 'Failed to elaborate text' });
+  }
+});
+
+// AI Shorten - Make text more concise
+router.post('/shorten', verifyToken, async (req: any, res) => {
+  try {
+    const { content } = req.body;
+
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ error: 'Content is required' });
+    }
+
+    const shortened = await aiService.shortenText(content);
+
+    res.json({
+      original: content,
+      shortened,
+      type: 'shorten'
+    });
+  } catch (error) {
+    console.error('Text shortening error:', error);
+    res.status(500).json({ error: 'Failed to shorten text' });
+  }
+});
+
+// AI Chat - Answer questions about email content
+router.post('/chat', verifyToken, async (req: any, res) => {
+  try {
+    const { question, context, subject, sender } = req.body;
+
+    if (!question || typeof question !== 'string') {
+      return res.status(400).json({ error: 'Question is required' });
+    }
+
+    const answer = await aiService.chatWithEmail(question, context, subject, sender);
+
+    res.json({
+      question,
+      answer,
+      context,
+      subject,
+      sender
+    });
+  } catch (error) {
+    console.error('AI chat error:', error);
+    res.status(500).json({ error: 'Failed to process question' });
+  }
+});
+
+// AI Summarize - Generic summarization endpoint
+router.post('/summarize', verifyToken, async (req: any, res) => {
+  try {
+    const { content, subject, sender } = req.body;
+
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ error: 'Content is required' });
+    }
+
+    const summary = await aiService.summarizeText(content);
+
+    res.json({
+      summary,
+      original: content,
+      subject,
+      sender
+    });
+  } catch (error) {
+    console.error('Summarization error:', error);
+    res.status(500).json({ error: 'Failed to summarize content' });
+  }
+});
+
 // Check AI service availability
 router.get('/status', verifyToken, async (req: any, res) => {
   try {
@@ -169,7 +345,13 @@ router.get('/status', verifyToken, async (req: any, res) => {
         emailSummarization: isAvailable,
         threadSummarization: isAvailable,
         priorityInbox: isAvailable,
-        toneRewriter: isAvailable
+        toneRewriter: isAvailable,
+        spellCheck: true, // Always available (has fallback)
+        polish: isAvailable,
+        summarize: isAvailable,
+        formalize: isAvailable,
+        elaborate: isAvailable,
+        shorten: isAvailable
       },
       message: isAvailable 
         ? 'AI features are available' 

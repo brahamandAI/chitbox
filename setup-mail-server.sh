@@ -250,4 +250,3 @@ chown chitbox:chitbox /home/chitbox/htdocs/chitbox.co/chitbox/DNS_RECORDS.txt
 
 echo -e "${GREEN}🎉 Setup complete! Restart your backend to apply changes.${NC}"
 echo -e "${YELLOW}⚠️  Important: Add the DNS records above to avoid spam filters!${NC}"
-

@@ -121,6 +121,24 @@ export class EmailQueueService {
         WHERE id = $1
       `, [email.id]);
 
+      // Process attachments if any
+      let processedAttachments = [];
+      if (email.attachments && Array.isArray(email.attachments)) {
+        try {
+          const attachmentsData = typeof email.attachments === 'string' 
+            ? JSON.parse(email.attachments) 
+            : email.attachments;
+          
+          processedAttachments = attachmentsData.map((att: any) => ({
+            filename: att.filename || att.originalName,
+            content: att.content ? Buffer.from(att.content, 'base64') : undefined,
+            contentType: att.contentType || att.mimeType
+          })).filter((att: any) => att.content); // Only include attachments with content
+        } catch (error) {
+          console.error('Error processing attachments:', error);
+        }
+      }
+
       // Prepare email with proper headers to avoid spam
       const mailOptions = {
         from: `"${email.from_name}" <${email.from_email}>`,
@@ -130,6 +148,7 @@ export class EmailQueueService {
         subject: email.subject,
         text: email.body_text,
         html: email.body_html,
+        attachments: processedAttachments,
         headers: {
           'X-Mailer': 'ChitBox Mail System v1.0',
           'X-Priority': '3',

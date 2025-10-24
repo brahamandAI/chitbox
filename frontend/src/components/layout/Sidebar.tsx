@@ -11,16 +11,11 @@ import {
   Star, 
   Plus,
   Sparkles,
-  Search,
-  Settings,
   Mail,
-  Archive,
-  LogOut
+  Archive
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Folder } from '@/types';
-import { ChitboxLogo } from '@/components/ui/ChitboxLogo';
 
 interface SidebarProps {
   folders: Folder[];
@@ -29,8 +24,6 @@ interface SidebarProps {
   onComposeClick: () => void;
   showPriorityInbox: boolean;
   onPriorityInboxToggle: () => void;
-  onSettingsClick?: () => void;
-  onLogoutClick?: () => void;
   className?: string;
 }
 
@@ -41,8 +34,6 @@ export function Sidebar({
   onComposeClick,
   showPriorityInbox,
   onPriorityInboxToggle,
-  onSettingsClick,
-  onLogoutClick,
   className
 }: SidebarProps) {
   const getFolderIcon = (folderType: string) => {
@@ -68,24 +59,6 @@ export function Sidebar({
 
   return (
     <div className={cn("h-full flex flex-col bg-slate-800 border-r border-slate-700", className)}>
-      {/* Header */}
-      <div className="p-6 border-b border-slate-700">
-        <div className="flex items-center justify-center">
-          <ChitboxLogo size="md" showTagline={false} />
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="p-4 border-b border-slate-700">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <Input
-            placeholder="Search mail..."
-            className="pl-10 bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500"
-          />
-        </div>
-      </div>
-
       {/* Compose Button */}
       <div className="p-4 border-b border-slate-700">
         <Button
@@ -149,28 +122,6 @@ export function Sidebar({
         ))}
       </div>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-slate-700 space-y-2">
-        {/* Settings */}
-        <Button
-          onClick={onSettingsClick}
-          variant="ghost"
-          className="w-full justify-start text-slate-300 hover:bg-slate-700 hover:text-yellow-400"
-        >
-          <Settings className="w-5 h-5 mr-3" />
-          Settings
-        </Button>
-
-        {/* Logout */}
-        <Button
-          onClick={onLogoutClick}
-          variant="ghost"
-          className="w-full justify-start text-slate-300 hover:bg-slate-700 hover:text-red-400"
-        >
-          <LogOut className="w-5 h-5 mr-3" />
-          Logout
-        </Button>
-      </div>
     </div>
   );
 }

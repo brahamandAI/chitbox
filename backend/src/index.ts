@@ -10,6 +10,7 @@ import aiRoutes from './routes/ai';
 import { setupSocketHandlers } from './socket/handlers';
 import { smtpServer } from './services/smtpServer';
 import { EmailQueueService } from './services/emailQueue';
+import { imapServer } from './services/imapServer';
 
 dotenv.config();
 
@@ -99,6 +100,13 @@ const startServer = async () => {
       // Start email queue processor
       emailQueue.startProcessing();
       console.log(`📬 Email queue processor started`);
+      
+      // Start IMAP server for email client access
+      imapServer.start().then(() => {
+        console.log(`📧 IMAP server started`);
+      }).catch((err) => {
+        console.error('Failed to start IMAP server:', err);
+      });
     });
   } catch (error) {
     console.error('Failed to start server:', error);
@@ -110,6 +118,7 @@ const startServer = async () => {
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully');
   await smtpServer.stop();
+  await imapServer.stop();
   await Database.close();
   server.close(() => {
     console.log('Process terminated');
@@ -119,6 +128,7 @@ process.on('SIGTERM', async () => {
 process.on('SIGINT', async () => {
   console.log('SIGINT received, shutting down gracefully');
   await smtpServer.stop();
+  await imapServer.stop();
   await Database.close();
   server.close(() => {
     console.log('Process terminated');

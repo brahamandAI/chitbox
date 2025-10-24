@@ -51,6 +51,7 @@ export function ComposeMail({
   const [bccRecipients, setBccRecipients] = useState<string[]>([]);
   const [currentBccRecipient, setCurrentBccRecipient] = useState('');
   const [showCcBcc, setShowCcBcc] = useState(false);
+  const [showSmartCompose, setShowSmartCompose] = useState(true);
 
   // Update form when replyTo changes (for smart reply)
   React.useEffect(() => {
@@ -73,9 +74,9 @@ export function ComposeMail({
         // Extract BCC recipients from the forwarded/replied message body (for display only)
         const bccMatch = replyTo.body.match(/Bcc:\s*([^\n]+)/i);
         if (bccMatch) {
-          const bccEmails = bccMatch[1].split(',').map(email => email.trim()).filter(email => email && email.includes('@'));
           // Note: BCC recipients are typically not included in replies for privacy
           // This is just for display in the forwarded message body
+          console.log('BCC recipients found in forwarded message (for display only):', bccMatch[1]);
         }
       }
     }
@@ -86,13 +87,49 @@ export function ComposeMail({
     
     setIsSending(true);
     try {
+      // Convert files to base64 for sending
+      const processedAttachments = await Promise.all(
+        attachments.map(async (file) => {
+          return new Promise<{
+            id: number;
+            messageId: number;
+            filename: string;
+            originalName: string;
+            mimeType: string;
+            fileSize: number;
+            filePath: string;
+            createdAt: string;
+            content: string;
+            contentType: string;
+          }>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              resolve({
+                id: 0,
+                messageId: 0,
+                filename: file.name,
+                originalName: file.name,
+                mimeType: file.type,
+                fileSize: file.size,
+                filePath: '',
+                createdAt: new Date().toISOString(),
+                content: (reader.result as string).split(',')[1], // Remove data:type;base64, prefix
+                contentType: file.type
+              });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+        })
+      );
+
       await onSend({
         to: recipients.length === 1 ? recipients[0] : recipients,
         cc: ccRecipients.length > 0 ? (ccRecipients.length === 1 ? ccRecipients[0] : ccRecipients) : undefined,
         bcc: bccRecipients.length > 0 ? (bccRecipients.length === 1 ? bccRecipients[0] : bccRecipients) : undefined,
         subject,
         body,
-        attachments: attachments.map(file => ({ filename: file.name, originalName: file.name, mimeType: file.type, fileSize: file.size, filePath: "", id: 0, messageId: 0, createdAt: new Date().toISOString() }))
+        attachments: processedAttachments
       });
       
       // Reset form
@@ -184,14 +221,14 @@ export function ComposeMail({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop with blur */}
       <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
       
       {/* Modal */}
       <div className={cn("relative w-full h-full max-w-none bg-slate-900 text-white shadow-2xl border border-slate-700 flex flex-col overflow-hidden", className)}>
       {/* Header */}
-      <div className="p-6 border-b border-slate-700 bg-slate-800">
+      <div className="p-4 border-b border-slate-700 bg-slate-800">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-white">Compose Email</h2>
           <div className="flex items-center space-x-2">
@@ -250,7 +287,7 @@ export function ComposeMail({
           {/* CC Field */}
           {showCcBcc && (
             <div className="flex items-start space-x-2">
-              <label className="w-12 text-sm font-medium text-slate-300 mt-3">Cc:</label>
+              <label className="w-12 text-sm font-medium text-slate-300 mt-3">CC:</label>
               <div className="flex-1">
                 <div className="flex flex-wrap gap-2 p-2 bg-slate-700 border border-slate-600 rounded-lg min-h-[40px] focus-within:border-blue-500">
                   {ccRecipients.map((email, index) => (
@@ -284,7 +321,7 @@ export function ComposeMail({
           {/* BCC Field */}
           {showCcBcc && (
             <div className="flex items-start space-x-2">
-              <label className="w-12 text-sm font-medium text-slate-300 mt-3">Bcc:</label>
+              <label className="w-12 text-sm font-medium text-slate-300 mt-3">BCC:</label>
               <div className="flex-1">
                 <div className="flex flex-wrap gap-2 p-2 bg-slate-700 border border-slate-600 rounded-lg min-h-[40px] focus-within:border-blue-500">
                   {bccRecipients.map((email, index) => (
@@ -321,14 +358,8 @@ export function ComposeMail({
               onClick={() => setShowCcBcc(!showCcBcc)}
               className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
             >
-              {showCcBcc ? 'Hide' : 'Show'} Cc & Bcc
+              {showCcBcc ? 'Hide' : 'Show'} CC & BCC
             </button>
-            {showCcBcc && (
-              <div className="text-xs text-slate-400 ml-4">
-                <span className="text-green-400">Cc:</span> Carbon Copy - visible to all recipients
-                <span className="text-orange-400 ml-4">Bcc:</span> Blind Carbon Copy - hidden from other recipients
-              </div>
-            )}
           </div>
           
           <div className="flex items-center space-x-2">
@@ -343,38 +374,15 @@ export function ComposeMail({
         </div>
       </div>
 
-      {/* AI Features */}
-      <div className="p-4 border-b border-slate-700 bg-slate-800">
-        <div className="flex items-center space-x-2">
-          <Button
-            onClick={() => setShowToneRewriter(!showToneRewriter)}
-            variant="ghost"
-            size="sm"
-            className="text-slate-300 hover:text-green-400 hover:bg-slate-700"
-          >
-            <Wand2 className="w-4 h-4 mr-2" />
-            Tone Rewriter
-          </Button>
-          <Button
-            onClick={() => setShowFormatting(!showFormatting)}
-            variant="ghost"
-            size="sm"
-            className="text-slate-300 hover:text-blue-400 hover:bg-slate-700"
-          >
-            <Type className="w-4 h-4 mr-2" />
-            Formatting
-          </Button>
+      {/* AI Features - Compact */}
+      {showToneRewriter && (
+        <div className="p-3 border-b border-slate-700 bg-slate-800">
+          <ToneRewriter
+            initialContent={body}
+            onContentChange={(rewrittenText) => setBody(rewrittenText)}
+          />
         </div>
-
-        {showToneRewriter && (
-          <div className="mt-4">
-            <ToneRewriter
-              initialContent={body}
-              onContentChange={(rewrittenText) => setBody(rewrittenText)}
-            />
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Message Body */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -383,128 +391,97 @@ export function ComposeMail({
             value={body}
             onChange={setBody}
             placeholder="Write your message here..."
-            className="w-full min-h-[300px]"
+            className="w-full h-full"
           />
         </div>
 
-        {/* Attachments */}
-        {attachments.length > 0 && (
-          <div className="p-4 border-t border-slate-700 bg-slate-800">
-            <h4 className="text-sm font-medium text-slate-300 mb-2">Attachments:</h4>
-            <div className="space-y-2">
+        {/* Compact Toolbar with Attachments */}
+        <div className="p-3 border-t border-slate-700 bg-slate-800">
+          {/* Attachments Display - Inline Chips */}
+          {attachments.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-2">
               {attachments.map((file, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-slate-700 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <FileText className="w-4 h-4 text-slate-400" />
-                    <span className="text-sm text-slate-300">{file.name}</span>
-                    <span className="text-xs text-slate-500">
-                      ({(file.size / 1024).toFixed(1)} KB)
-                    </span>
-                  </div>
-                  <Button
+                <div key={index} className="flex items-center space-x-1 bg-slate-700 px-2 py-1 rounded-full text-xs">
+                  <FileText className="w-3 h-3 text-slate-400" />
+                  <span className="text-slate-300">{file.name}</span>
+                  <span className="text-slate-500">({(file.size / 1024).toFixed(0)}KB)</span>
+                  <button
                     onClick={() => removeAttachment(index)}
-                    variant="ghost"
-                    size="sm"
-                    className="text-slate-400 hover:text-red-400 hover:bg-slate-600"
+                    className="ml-1 hover:text-red-400 transition-colors"
                   >
-                    <X className="w-4 h-4" />
-                  </Button>
+                    <X className="w-3 h-3" />
+                  </button>
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Toolbar */}
-        <div className="p-4 border-t border-slate-700 bg-slate-800">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <input
-                type="file"
-                id="file-upload"
-                multiple
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <label 
-                htmlFor="file-upload"
-                className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-slate-300 hover:text-blue-400 hover:bg-slate-700 cursor-pointer transition-colors"
-              >
-                <Paperclip className="w-4 h-4 mr-2" />
+            <div className="flex items-center space-x-1">
+              {/* Attach Files */}
+              <input type="file" id="file-upload" multiple onChange={handleFileUpload} className="hidden" />
+              <label htmlFor="file-upload" className="inline-flex items-center px-2 py-1.5 text-xs rounded-md text-slate-300 hover:text-blue-400 hover:bg-slate-700 cursor-pointer transition-colors">
+                <Paperclip className="w-4 h-4 mr-1" />
                 Attach
               </label>
               
-              <input
-                type="file"
-                id="image-upload"
-                accept="image/*"
-                multiple
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <label 
-                htmlFor="image-upload"
-                className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-slate-300 hover:text-green-400 hover:bg-slate-700 cursor-pointer transition-colors"
-              >
-                <Image className="w-4 h-4 mr-2" aria-label="Upload image" />
+              {/* Attach Images */}
+              <input type="file" id="image-upload" accept="image/*" multiple onChange={handleFileUpload} className="hidden" />
+              <label htmlFor="image-upload" className="inline-flex items-center px-2 py-1.5 text-xs rounded-md text-slate-300 hover:text-green-400 hover:bg-slate-700 cursor-pointer transition-colors">
+                <Image className="w-4 h-4 mr-1" aria-label="Upload image" />
                 Image
               </label>
 
+              {/* AI Tools */}
+              <Button onClick={() => setShowToneRewriter(!showToneRewriter)} variant="ghost" size="sm" className="text-xs text-slate-300 hover:text-purple-400 hover:bg-slate-700 px-2 py-1.5">
+                <Wand2 className="w-4 h-4 mr-1" />
+                AI Rewrite
+              </Button>
+
+              {/* Formatting Toggle */}
+              <Button onClick={() => setShowFormatting(!showFormatting)} variant="ghost" size="sm" className="text-xs text-slate-300 hover:text-yellow-400 hover:bg-slate-700 px-2 py-1.5">
+                <Type className="w-4 h-4 mr-1" />
+                Format
+              </Button>
+
+              {/* Formatting Buttons */}
               {showFormatting && (
-                <div className="flex items-center space-x-1 ml-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-slate-300 hover:text-yellow-400 hover:bg-slate-700"
-                  >
+                <>
+                  <div className="w-px h-6 bg-slate-600 mx-1"></div>
+                  <Button variant="ghost" size="sm" className="p-1.5 text-slate-300 hover:text-yellow-400 hover:bg-slate-700">
                     <Bold className="w-4 h-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-slate-300 hover:text-yellow-400 hover:bg-slate-700"
-                  >
+                  <Button variant="ghost" size="sm" className="p-1.5 text-slate-300 hover:text-yellow-400 hover:bg-slate-700">
                     <Italic className="w-4 h-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-slate-300 hover:text-yellow-400 hover:bg-slate-700"
-                  >
+                  <Button variant="ghost" size="sm" className="p-1.5 text-slate-300 hover:text-yellow-400 hover:bg-slate-700">
                     <Underline className="w-4 h-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-slate-300 hover:text-yellow-400 hover:bg-slate-700"
-                  >
+                  <Button variant="ghost" size="sm" className="p-1.5 text-slate-300 hover:text-yellow-400 hover:bg-slate-700">
                     <Link className="w-4 h-4" />
                   </Button>
-                </div>
+                </>
               )}
             </div>
 
             <div className="flex items-center space-x-2">
-              <Button
-                onClick={onClose}
-                variant="outline"
-                className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
-              >
+              <Button onClick={onClose} variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white text-xs px-4">
                 Cancel
               </Button>
               <Button
                 onClick={handleSend}
                 disabled={recipients.length === 0 || !subject || !body || isSending}
-                className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed px-8 py-2 font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200"
+                size="sm"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed px-6 font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 {isSending ? (
                   <>
-                    <div className="w-5 h-5 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <div className="w-4 h-4 mr-1.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                     Sending...
                   </>
                 ) : (
                   <>
-                    <Send className="w-5 h-5 mr-2" />
+                    <Send className="w-4 h-4 mr-1.5" />
                     Send
                   </>
                 )}
@@ -514,13 +491,26 @@ export function ComposeMail({
         </div>
       </div>
 
-      {/* Smart Compose */}
-      <div className="p-4 border-t border-slate-700 bg-slate-800">
-        <SmartCompose
-          text={body}
-          onSuggestionSelect={(suggestion: string) => setBody((prev: string) => prev + suggestion)}
-        />
-      </div>
+      {/* Smart Compose - Compact */}
+      {showSmartCompose && (
+        <div className="p-2 border-t border-slate-700 bg-slate-800">
+          <SmartCompose
+            text={body}
+            context={`Email to: ${recipients.join(', ')} | Subject: ${subject}`}
+            onSuggestionSelect={(suggestion: string) => {
+              // Insert suggestion at cursor position or append
+              setBody((prev: string) => {
+                if (prev.trim().endsWith('.') || prev.trim().endsWith('!') || prev.trim().endsWith('?')) {
+                  return prev + ' ' + suggestion;
+                } else {
+                  return prev + suggestion;
+                }
+              });
+            }}
+            onClose={() => setShowSmartCompose(false)}
+          />
+        </div>
+      )}
       </div>
     </div>
   );

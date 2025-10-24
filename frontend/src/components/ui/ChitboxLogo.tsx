@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 interface ChitboxLogoProps {
@@ -21,43 +22,26 @@ export function ChitboxLogo({
   taglineClassName 
 }: ChitboxLogoProps) {
   const sizeClasses = {
-    sm: { icon: 'w-6 h-6', text: 'text-lg', tagline: 'text-xs' },
-    md: { icon: 'w-8 h-8', text: 'text-xl', tagline: 'text-sm' },
-    lg: { icon: 'w-10 h-10', text: 'text-2xl', tagline: 'text-base' },
-    xl: { icon: 'w-12 h-12', text: 'text-3xl', tagline: 'text-lg' }
+    sm: { icon: 'w-8 h-8', text: 'text-lg', tagline: 'text-xs' },
+    md: { icon: 'w-10 h-10', text: 'text-xl', tagline: 'text-sm' },
+    lg: { icon: 'w-12 h-12', text: 'text-2xl', tagline: 'text-base' },
+    xl: { icon: 'w-16 h-16', text: 'text-3xl', tagline: 'text-lg' }
   };
 
   const currentSize = sizeClasses[size];
 
   return (
-    <div className={cn("flex items-center space-x-2", className)}>
-      {/* Logo Icon - Envelope with Circuit Board */}
-      <div className={cn(
-        "relative bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg",
-        currentSize.icon
-      )}>
-        {/* Envelope outline */}
-        <div className="absolute inset-1 border-2 border-white rounded-lg">
-          {/* Circuit board pattern inside envelope */}
-          <div className="absolute inset-2 bg-blue-500 rounded opacity-80">
-            {/* Circuit lines */}
-            <div className="absolute top-1 left-1 w-2 h-0.5 bg-white rounded"></div>
-            <div className="absolute top-1 right-1 w-2 h-0.5 bg-white rounded"></div>
-            <div className="absolute top-2 left-2 w-1 h-0.5 bg-white rounded"></div>
-            <div className="absolute top-3 left-1 w-3 h-0.5 bg-white rounded"></div>
-            <div className="absolute top-3 right-2 w-1 h-0.5 bg-white rounded"></div>
-            
-            {/* Circuit nodes */}
-            <div className="absolute top-1 left-1 w-0.5 h-0.5 bg-white rounded-full"></div>
-            <div className="absolute top-1 right-1 w-0.5 h-0.5 bg-white rounded-full"></div>
-            <div className="absolute top-2 left-2 w-0.5 h-0.5 bg-white rounded-full"></div>
-            <div className="absolute top-3 left-1 w-0.5 h-0.5 bg-white rounded-full"></div>
-            <div className="absolute top-3 right-2 w-0.5 h-0.5 bg-white rounded-full"></div>
-          </div>
-        </div>
-        
-        {/* Glowing effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-400 rounded-xl opacity-20 animate-pulse"></div>
+    <div className={cn("flex items-center space-x-3", className)}>
+      {/* Actual Chitbox Logo Image */}
+      <div className={cn("relative", currentSize.icon)}>
+        <Image
+          src="/chitbox-logo.png"
+          alt="ChitBox Logo"
+          width={size === 'xl' ? 64 : size === 'lg' ? 48 : size === 'md' ? 40 : 32}
+          height={size === 'xl' ? 64 : size === 'lg' ? 48 : size === 'md' ? 40 : 32}
+          className="object-contain"
+          priority
+        />
       </div>
 
       {/* Text and Tagline */}
