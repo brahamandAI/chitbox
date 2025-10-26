@@ -29,6 +29,7 @@ fi
 
 echo "🔓 Decrypting .env.production files..."
 if [ -f frontend/.env.production.encrypted ]; then
+    # Use node directly to avoid triggering npm install for root dependencies
     node scripts/env-manager.js decrypt frontend/.env.production.encrypted
     echo "✅ frontend/.env.production decrypted successfully"
 else
@@ -36,6 +37,7 @@ else
 fi
 
 if [ -f backend/.env.production.encrypted ]; then
+    # Use node directly to avoid triggering npm install for root dependencies
     node scripts/env-manager.js decrypt backend/.env.production.encrypted
     echo "✅ backend/.env.production decrypted successfully"
 else
