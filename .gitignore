@@ -1,4 +1,9 @@
 # ===========================================
+# CHITBOX PROJECT .GITIGNORE
+# ===========================================
+# Comprehensive ignore patterns for Next.js frontend + Node.js backend
+
+# ===========================================
 # DEPENDENCIES & PACKAGE MANAGERS
 # ===========================================
 node_modules/
@@ -19,15 +24,9 @@ pnpm-lock.yaml
 # ===========================================
 # ENVIRONMENT VARIABLES & CONFIGURATION
 # ===========================================
+# Ignore all environment files
 .env
 .env.*
-!.env.example
-!.env.local.example
-!.env.development.example
-!.env.production.example
-!.env.test.example
-
-# Specific environment files
 .env.local
 .env.development.local
 .env.test.local
@@ -35,45 +34,69 @@ pnpm-lock.yaml
 .env.git
 .env.production
 
-# ===========================================
-# BUILD OUTPUTS & DISTRIBUTION
-# ===========================================
-# Frontend builds
-/frontend/build
-/frontend/dist
-/frontend/.next
-/frontend/out
+# Allow example files (these should be tracked)
+!.env.example
+!.env.local.example
+!.env.development.example
+!.env.production.example
+!.env.test.example
 
-# Backend builds
-/backend/build
-/backend/dist
-/backend/.next
+# Allow encrypted environment files (these should be tracked)
+!.env.*.encrypted
 
-# TypeScript build artifacts
+# ===========================================
+# FRONTEND SPECIFIC (Next.js/React)
+# ===========================================
+# Next.js build outputs
+.next/
+out/
+build/
+dist/
+
+# Next.js cache and temporary files
+.next/cache/
+.swc/
+.vercel/
+
+# React/Next.js specific
+next-env.d.ts
+*.tsbuildinfo
+
+# Frontend specific patterns
+/frontend/.next/
+/frontend/out/
+/frontend/build/
+/frontend/dist/
+
+# ===========================================
+# BACKEND SPECIFIC (Node.js/TypeScript)
+# ===========================================
+# TypeScript build outputs
+dist/
+build/
 *.tsbuildinfo
 .tscache/
 
-# ===========================================
-# NEXT.JS SPECIFIC
-# ===========================================
-.next/
-.vercel/
-.swc/
+# Backend specific patterns
+/backend/dist/
+/backend/build/
+/backend/.next/
 
-# Next.js cache
-.next/cache/
+# Node.js runtime
+pids/
+*.pid
+*.seed
+*.pid.lock
 
 # ===========================================
 # TESTING & COVERAGE
 # ===========================================
 coverage/
-.nyc_output
+.nyc_output/
 test-results/
 playwright-report/
 test-results.xml
 coverage.lcov
-
-# Jest
 jest.config.js
 jest.config.ts
 
@@ -86,8 +109,6 @@ jest.config.ts
 *.db-journal
 *.db-wal
 *.db-shm
-
-# Database dumps
 *.dump
 *.sql.gz
 
@@ -100,12 +121,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
-
-# Runtime data
-pids/
-*.pid
-*.seed
-*.pid.lock
+pnpm-debug.log*
 
 # ===========================================
 # CACHE & TEMPORARY FILES
@@ -115,8 +131,12 @@ pids/
 .eslintcache
 .stylelintcache
 .turbo/
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
 
-# Temporary files
+# Temporary directories
 tmp/
 temp/
 uploads/
@@ -132,6 +152,7 @@ uploads/
 .project
 .classpath
 .settings/
+.vscode/launch.json
 
 # ===========================================
 # OPERATING SYSTEM FILES
@@ -142,8 +163,6 @@ uploads/
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
-Thumbs.db
 
 # Windows
 Thumbs.db
@@ -194,24 +213,40 @@ docker-compose.override.yml
 .terraform.lock.hcl
 
 # ===========================================
-# MISC
+# ARCHIVES & BACKUPS
 # ===========================================
-# Archives
 *.tgz
 *.tar.gz
 *.zip
 *.rar
-
-# Backup files
 *.bak
 *.backup
 *.old
+
+# ===========================================
+# DEVELOPMENT TOOLS
+# ===========================================
+# Storybook
+.storybook-out
+storybook-static/
+
+# ESLint
+.eslintcache
+
+# Prettier
+.prettierignore
+
+# ===========================================
+# MISC
+# ===========================================
+# Node.js REPL history
+.node_repl_history
+
+# Optional npm cache directory
+.npm
 
 # Microbundle cache
 .rpt2_cache/
 .rts2_cache_cjs/
 .rts2_cache_es/
 .rts2_cache_umd/
-
-# Storybook build outputs
-.storybook-out
