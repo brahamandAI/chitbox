@@ -10,7 +10,7 @@ module.exports = {
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        PORT: 3005,
+        PORT: 8001,
         CORS_ORIGIN: 'https://chitbox.co'
       },
       error_file: '../logs/backend-error.log',
@@ -32,7 +32,7 @@ module.exports = {
       restart_delay: 4000,
       env: {
         NODE_ENV: 'production',
-        PORT: 3004,
+        PORT: 3002,
         NEXT_PUBLIC_API_URL: 'https://chitbox.co/api',
         NEXT_PUBLIC_SOCKET_URL: 'https://chitbox.co'
       },

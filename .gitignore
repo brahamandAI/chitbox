@@ -1,35 +1,129 @@
-# ChitBox - Root .gitignore
+# ===========================================
+# DEPENDENCIES & PACKAGE MANAGERS
+# ===========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Environment Variables (IMPORTANT - DO NOT COMMIT!)
+# Package manager files
+.npm
+.yarn-integrity
+.pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# ===========================================
+# ENVIRONMENT VARIABLES & CONFIGURATION
+# ===========================================
 .env
 .env.*
 !.env.example
-!*.env.example
+!.env.local.example
+!.env.development.example
+!.env.production.example
+!.env.test.example
 
-# Node modules
-node_modules/
-**/node_modules/
+# Specific environment files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.git
+.env.production
 
-# Logs
-logs
+# ===========================================
+# BUILD OUTPUTS & DISTRIBUTION
+# ===========================================
+# Frontend builds
+/frontend/build
+/frontend/dist
+/frontend/.next
+/frontend/out
+
+# Backend builds
+/backend/build
+/backend/dist
+/backend/.next
+
+# TypeScript build artifacts
+*.tsbuildinfo
+.tscache/
+
+# ===========================================
+# NEXT.JS SPECIFIC
+# ===========================================
+.next/
+.vercel/
+.swc/
+
+# Next.js cache
+.next/cache/
+
+# ===========================================
+# TESTING & COVERAGE
+# ===========================================
+coverage/
+.nyc_output
+test-results/
+playwright-report/
+test-results.xml
+coverage.lcov
+
+# Jest
+jest.config.js
+jest.config.ts
+
+# ===========================================
+# DATABASE & MIGRATIONS
+# ===========================================
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Database dumps
+*.dump
+*.sql.gz
+
+# ===========================================
+# LOGS & RUNTIME DATA
+# ===========================================
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
-pnpm-debug.log*
 
-# OS Files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-desktop.ini
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
 
-# IDE
+# ===========================================
+# CACHE & TEMPORARY FILES
+# ===========================================
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.turbo/
+
+# Temporary files
+tmp/
+temp/
+uploads/
+
+# ===========================================
+# IDE & EDITOR FILES
+# ===========================================
 .vscode/
 .idea/
 *.swp
@@ -38,67 +132,86 @@ desktop.ini
 .project
 .classpath
 .settings/
-*.sublime-project
-*.sublime-workspace
 
-# Build outputs
-dist/
-build/
-out/
-.next/
-.nuxt/
-.cache/
+# ===========================================
+# OPERATING SYSTEM FILES
+# ===========================================
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# Test coverage
-coverage/
-*.coverage
-.nyc_output/
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 
-# Temporary files
-tmp/
-temp/
-*.tmp
+# Linux
+*~
 
-# Database files
-*.sqlite
-*.sqlite3
-*.db
-
-# Uploads and user-generated content
-uploads/
-public/uploads/
-backend/uploads/
-
-# SSL Certificates
+# ===========================================
+# SECURITY & SENSITIVE FILES
+# ===========================================
+# SSL certificates
 *.pem
 *.key
 *.crt
-ssl/
+*.csr
+*.p12
+*.pfx
+
+# SSH keys
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# API keys and secrets
+secrets.json
+.secrets
+api-keys.json
+
+# ===========================================
+# DEPLOYMENT & INFRASTRUCTURE
+# ===========================================
+# PM2
+ecosystem.config.js
+.pm2/
 
 # Docker
 .dockerignore
 docker-compose.override.yml
 
-# Package manager lock files (optional - you can include these if you want)
-# package-lock.json
-# yarn.lock
-# pnpm-lock.yaml
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
 
-# TypeScript
-*.tsbuildinfo
-
-# Production deployment files
-.vercel/
-.netlify/
+# ===========================================
+# MISC
+# ===========================================
+# Archives
+*.tgz
+*.tar.gz
+*.zip
+*.rar
 
 # Backup files
 *.bak
 *.backup
+*.old
 
-# Test files (optional)
-test-*.js
-*-test.js
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
 
-# Personal notes
-TODO.md
-NOTES.md
+# Storybook build outputs
+.storybook-out
