@@ -63,27 +63,35 @@ Provide 3 completions, each on a new line, without numbering:`;
     }
 
     try {
-      const prompt = `Generate 3 quick, professional email reply suggestions for this email. Make them concise, friendly, and appropriate for the context.
+      const prompt = `Generate 3 smart, contextual email reply suggestions based on the email content below.
 
 Email from: ${senderName || 'Sender'}
 Email content: "${emailContent}"
 
-Provide 3 reply suggestions, each on a new line, without numbering:`;
+Requirements:
+- Analyze the tone and context of the email
+- If it's a question, provide an answer
+- If it's a request, acknowledge and provide next steps
+- If it's informational, acknowledge receipt
+- Be professional, friendly, and concise
+- Each reply should be 1-2 sentences
+
+Provide exactly 3 different reply options, each on a new line, without numbering or prefixes:`;
 
       const completion = await this.openai!.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [
           {
             role: "system",
-            content: "You are a helpful assistant that generates quick, professional email reply suggestions. Always provide exactly 3 suggestions that are concise and appropriate."
+            content: "You are ChitAI, an intelligent email assistant. Generate contextually appropriate, professional reply suggestions that match the tone and purpose of the original email."
           },
           {
             role: "user",
             content: prompt
           }
         ],
-        max_tokens: 200,
-        temperature: 0.6,
+        max_tokens: 250,
+        temperature: 0.7,
       });
 
       const suggestions = completion.choices[0]?.message?.content?.split('\n').filter(s => s.trim()) || [];
@@ -101,26 +109,30 @@ Provide 3 reply suggestions, each on a new line, without numbering:`;
     }
 
     try {
-      const prompt = `Summarize this email in 2-3 sentences, highlighting the key points and any action items.
+      const prompt = `Analyze and summarize this email professionally. Focus on:
+1. Main purpose or topic
+2. Key points and details
+3. Any action items or requests
+4. Urgency level if applicable
 
 Subject: ${emailSubject || 'No subject'}
 Content: "${emailContent}"
 
-Provide a concise summary:`;
+Provide a clear, concise summary in 2-4 sentences that captures the essence and importance of this email:`;
 
       const completion = await this.openai!.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [
           {
             role: "system",
-            content: "You are a helpful assistant that summarizes emails concisely, highlighting key points and action items."
+            content: "You are ChitAI, an intelligent email assistant that provides clear, actionable summaries. Identify the purpose, key points, and required actions. Be concise but comprehensive."
           },
           {
             role: "user",
             content: prompt
           }
         ],
-        max_tokens: 150,
+        max_tokens: 200,
         temperature: 0.3,
       });
 
@@ -608,29 +620,38 @@ Provide only the rewritten email without any additional commentary:`;
     }
 
     try {
-      const prompt = `You are an AI assistant helping with email analysis. Answer the user's question based on the email content provided.
+      const prompt = `You are ChitAI, an intelligent email assistant. Analyze the email content and answer the user's question accurately.
 
-Email Subject: ${subject || 'No subject'}
+📧 Email Details:
+Subject: ${subject || 'No subject'}
 From: ${sender || 'Unknown sender'}
-Email Content: ${context || 'No content provided'}
+Content: ${context || 'No content provided'}
 
-User Question: ${question}
+❓ User Question: ${question}
 
-Please provide a helpful and accurate response based on the email content. If the question cannot be answered from the email content, please say so politely.`;
+Instructions:
+- Provide a clear, direct answer based on the email content
+- If asking about sentiment/tone, analyze the language used
+- If asking about urgency, look for time-sensitive keywords
+- If asking about actions, identify specific requests or tasks
+- If the answer isn't in the email, acknowledge this politely and offer what you can determine
+- Be conversational but professional
+
+Answer:`;
 
       const completion = await this.openai!.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [
           {
             role: "system",
-            content: "You are a helpful email assistant. Answer questions about email content accurately and concisely."
+            content: "You are ChitAI, an intelligent email analysis assistant. Provide accurate, contextual answers about email content. Be helpful, clear, and professional."
           },
           {
             role: "user",
             content: prompt
           }
         ],
-        max_tokens: 300,
+        max_tokens: 350,
         temperature: 0.7,
       });
 

@@ -5,13 +5,14 @@ module.exports = {
       cwd: './backend',
       script: 'dist/index.js',
       instances: 1,
-      autorestart: true,
+      autorestart: false,
+      stop_exit_codes: '0',
       watch: false,
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
         PORT: 8001,
-        CORS_ORIGIN: 'https://chitbox.co'
+        CORS_ORIGIN: 'http://localhost:3002,https://chitbox.co'
       },
       error_file: '../logs/backend-error.log',
       out_file: '../logs/backend-out.log',
@@ -24,12 +25,10 @@ module.exports = {
       script: 'npm',
       args: 'start',
       instances: 1,
-      autorestart: true,
+      autorestart: false,
+      stop_exit_codes: '0',
       watch: false,
       max_memory_restart: '1G',
-      min_uptime: '10s',
-      max_restarts: 10,
-      restart_delay: 4000,
       env: {
         NODE_ENV: 'production',
         PORT: 3002,
