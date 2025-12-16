@@ -26,6 +26,32 @@ router.post('/register', sanitizeInput, rateLimit(5, 300000), validateRegistrati
       return res.status(400).json({ error: 'Email, name, password, and confirm password are required' });
     }
 
+    // Validate email domain - only @chitbox.co allowed
+    const emailDomain = email.toLowerCase().split('@')[1];
+    if (emailDomain !== 'chitbox.co') {
+      return res.status(400).json({ 
+        error: 'Only @chitbox.co email addresses are allowed. Please use a valid ChitBox email address.' 
+      });
+    }
+
+    // Validate email format and prevent silly names
+    const emailUsername = email.toLowerCase().split('@')[0];
+    const invalidPatterns = ['test', 'admin', 'root', 'postmaster', 'abuse', 'noreply', 'no-reply', 'devilboy', 'silly', 'fake', 'temp', 'spam'];
+    
+    if (invalidPatterns.some(pattern => emailUsername.includes(pattern))) {
+      return res.status(400).json({ 
+        error: 'This username is not allowed. Please choose a professional email address.' 
+      });
+    }
+
+    // Validate email username format (alphanumeric, dots, hyphens, underscores only)
+    const usernameRegex = /^[a-z0-9._-]+$/;
+    if (!usernameRegex.test(emailUsername)) {
+      return res.status(400).json({ 
+        error: 'Email username can only contain letters, numbers, dots, hyphens, and underscores.' 
+      });
+    }
+
     if (password !== confirmPassword) {
       return res.status(400).json({ error: 'Passwords do not match' });
     }
@@ -34,7 +60,7 @@ router.post('/register', sanitizeInput, rateLimit(5, 300000), validateRegistrati
       return res.status(400).json({ error: 'Password must be at least 8 characters long' });
     }
 
-    // Check if user already exists
+    // Check if user already exists (uniqueness check)
     const existingUser = await Database.query(
       'SELECT id FROM users WHERE email = $1',
       [email]

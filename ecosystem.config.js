@@ -9,10 +9,10 @@ module.exports = {
       stop_exit_codes: '0',
       watch: false,
       max_memory_restart: '1G',
+      env_file: './backend/.env.production',
       env: {
         NODE_ENV: 'production',
-        PORT: 8001,
-        CORS_ORIGIN: 'http://localhost:3002,https://chitbox.co'
+        PORT: 8001
       },
       error_file: '../logs/backend-error.log',
       out_file: '../logs/backend-out.log',
@@ -29,11 +29,10 @@ module.exports = {
       stop_exit_codes: '0',
       watch: false,
       max_memory_restart: '1G',
+      env_file: './frontend/.env.production',
       env: {
         NODE_ENV: 'production',
-        PORT: 3002,
-        NEXT_PUBLIC_API_URL: 'https://chitbox.co/api',
-        NEXT_PUBLIC_SOCKET_URL: 'https://chitbox.co'
+        PORT: 3002
       },
       error_file: '../logs/frontend-error.log',
       out_file: '../logs/frontend-out.log',

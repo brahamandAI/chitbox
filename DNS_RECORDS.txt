@@ -1,10 +1,11 @@
 ====================================================================
-🚀 CHITBOX MAIL SERVER - DNS RECORDS TO ADD
+🚀 CHITBOX MAIL SERVER - DNS RECORDS (UPDATED)
 ====================================================================
 
 YOUR SERVER IP: 31.97.207.118
+LAST UPDATED: December 16, 2025
 
-IMPORTANT: Add these DNS records to your domain chitbox.co
+IMPORTANT: Verify/Update these DNS records for your domain chitbox.co
 
 ====================================================================
 1️⃣ MX RECORD (Mail Exchange - Required)
