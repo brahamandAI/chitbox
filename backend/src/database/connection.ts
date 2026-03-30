@@ -3,11 +3,15 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Detect if DATABASE_URL is a local connection (no SSL needed)
+const isLocalDb = (url: string) =>
+  url.includes('localhost') || url.includes('127.0.0.1');
+
 // Support both connection string (for Supabase) and individual parameters
 const poolConfig = process.env.DATABASE_URL 
   ? {
       connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }, // Always use SSL for Supabase
+      ssl: isLocalDb(process.env.DATABASE_URL) ? false : { rejectUnauthorized: false },
       max: 20,
       idleTimeoutMillis: 60000, // 60 seconds
       connectionTimeoutMillis: 10000, // 10 seconds
