@@ -11,7 +11,8 @@ import {
   Search,
   Filter,
   MailOpen,
-  Trash2
+  Trash2,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,8 +25,10 @@ interface MailListProps {
   onStarToggle: (threadId: number) => void;
   onMarkAsRead: (threadId: number) => void;
   onDelete?: (threadId: number) => void;
+  onMoveToTrash?: (threadId: number) => void;
   onRefresh?: () => void;
   className?: string;
+  isTrashFolder?: boolean;
 }
 
 export function MailList({
@@ -35,11 +38,14 @@ export function MailList({
   onStarToggle,
   onMarkAsRead,
   onDelete,
+  onMoveToTrash,
   onRefresh,
-  className
+  className,
+  isTrashFolder = false,
 }: MailListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterUnread, setFilterUnread] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState<{ threadId: number } | null>(null);
 
   const formatTime = (timestamp: string) => {
     try {
@@ -148,6 +154,52 @@ export function MailList({
         </div>
       </div>
 
+      {/* Delete Confirmation Dialog */}
+      {deleteDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setDeleteDialog(null)}>
+          <div
+            className="bg-slate-800 border border-slate-700 rounded-xl p-6 w-80 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-white">Delete email</h3>
+              <button onClick={() => setDeleteDialog(null)} className="text-slate-400 hover:text-white transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-sm text-slate-400 mb-5">Choose how you want to remove this email.</p>
+            <div className="flex flex-col gap-2">
+              {!isTrashFolder && onMoveToTrash && (
+                <Button
+                  onClick={() => {
+                    onMoveToTrash(deleteDialog.threadId);
+                    setDeleteDialog(null);
+                  }}
+                  className="w-full bg-slate-700 hover:bg-slate-600 text-white justify-start gap-2"
+                  variant="ghost"
+                >
+                  <Trash2 className="w-4 h-4 text-slate-400" />
+                  Move to Trash
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  onClick={() => {
+                    onDelete(deleteDialog.threadId);
+                    setDeleteDialog(null);
+                  }}
+                  className="w-full bg-red-600/20 hover:bg-red-600/40 text-red-400 justify-start gap-2"
+                  variant="ghost"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Permanently
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Thread List */}
       <div className="flex-1 overflow-y-auto">
         {filteredThreads.length === 0 ? (
@@ -197,7 +249,7 @@ export function MailList({
                           }
                         </span>
                         {!thread.isRead && (
-                          <span className="px-3 py-1 text-xs font-extrabold text-white bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 rounded-full shadow-lg animate-pulse ring-2 ring-yellow-400 ring-opacity-50">
+                          <span className="px-2 py-0.5 text-xs font-semibold text-blue-100 bg-blue-600 rounded-full">
                             NEW
                           </span>
                         )}
@@ -233,11 +285,11 @@ export function MailList({
                           >
                             <Circle className="w-4 h-4" />
                           </Button>
-                          {onDelete && (
+                          {(onDelete || onMoveToTrash) && (
                             <Button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                onDelete(thread.id);
+                                setDeleteDialog({ threadId: thread.id });
                               }}
                               variant="ghost"
                               size="sm"

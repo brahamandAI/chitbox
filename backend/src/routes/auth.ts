@@ -7,6 +7,52 @@ import { createSession, logoutUser, verifyToken } from '../middleware/session';
 
 const router = express.Router();
 
+// Check email / username availability (public endpoint)
+router.get('/check-email', async (req, res) => {
+  const { username } = req.query as { username?: string };
+
+  if (!username || typeof username !== 'string') {
+    return res.status(400).json({ error: 'username query param is required' });
+  }
+
+  const trimmed = username.trim().toLowerCase();
+
+  // Validate username format
+  const usernameRegex = /^[a-z0-9._-]+$/;
+  const invalidPatterns = ['test', 'admin', 'root', 'postmaster', 'abuse', 'noreply', 'no-reply'];
+
+  if (!usernameRegex.test(trimmed)) {
+    return res.json({
+      available: false,
+      reason: 'Username can only contain letters, numbers, dots, hyphens, and underscores'
+    });
+  }
+
+  if (invalidPatterns.some(p => trimmed.includes(p))) {
+    return res.json({
+      available: false,
+      reason: 'This username is reserved and cannot be used'
+    });
+  }
+
+  if (trimmed.length < 3) {
+    return res.json({ available: false, reason: 'Username must be at least 3 characters' });
+  }
+
+  const email = `${trimmed}@chitbox.co`;
+
+  try {
+    const result = await Database.query('SELECT id FROM users WHERE email = $1', [email]);
+    return res.json({
+      available: result.rows.length === 0,
+      email,
+      reason: result.rows.length > 0 ? 'This email address is already registered' : null
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Register user
 router.post('/register', sanitizeInput, rateLimit(5, 300000), validateRegistration, async (req, res) => {
   try {
@@ -218,6 +264,98 @@ router.get('/me', verifyToken, async (req: any, res) => {
     });
   } catch (error) {
     console.error('Get user error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update profile
+router.put('/profile', verifyToken, sanitizeInput, async (req: any, res) => {
+  try {
+    const { name, profession, country } = req.body;
+    const errors: string[] = [];
+
+    if (name !== undefined) {
+      if (!name || name.trim().length < 2) errors.push('Name must be at least 2 characters');
+      if (name.trim().length > 255) errors.push('Name is too long');
+    }
+    if (profession !== undefined && profession.length > 100) errors.push('Profession is too long');
+    if (country !== undefined && country.length > 100) errors.push('Country is too long');
+
+    if (errors.length > 0) {
+      return res.status(400).json({ error: 'Validation failed', details: errors });
+    }
+
+    const result = await Database.query(
+      `UPDATE users 
+       SET name        = COALESCE($1, name),
+           profession  = COALESCE($2, profession),
+           country     = COALESCE($3, country),
+           updated_at  = CURRENT_TIMESTAMP
+       WHERE id = $4
+       RETURNING id, email, name, profession, country, age, interests, newsletter, created_at`,
+      [name?.trim() || null, profession || null, country || null, req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: 'Profile updated successfully', user: result.rows[0] });
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Change password
+router.post('/change-password', verifyToken, sanitizeInput, async (req: any, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Both current and new password are required' });
+    }
+
+    const errors: string[] = [];
+    if (newPassword.length < 8) errors.push('New password must be at least 8 characters');
+    if (!/[a-z]/.test(newPassword)) errors.push('New password must contain a lowercase letter');
+    if (!/[A-Z]/.test(newPassword)) errors.push('New password must contain an uppercase letter');
+    if (!/\d/.test(newPassword)) errors.push('New password must contain a number');
+
+    if (errors.length > 0) {
+      return res.status(400).json({ error: 'Validation failed', details: errors });
+    }
+
+    // Fetch current hash
+    const userResult = await Database.query(
+      'SELECT password_hash FROM users WHERE id = $1', [req.user.id]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const isValid = await bcrypt.compare(currentPassword, userResult.rows[0].password_hash);
+    if (!isValid) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 12);
+    await Database.query(
+      'UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [newHash, req.user.id]
+    );
+
+    // Invalidate all existing sessions except current
+    const currentToken = req.headers.authorization?.split(' ')[1];
+    await Database.query(
+      'DELETE FROM user_sessions WHERE user_id = $1 AND session_token != $2',
+      [req.user.id, currentToken]
+    );
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Password change error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

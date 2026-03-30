@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Settings, LogOut, Camera, ChevronDown } from 'lucide-react';
 
@@ -41,16 +42,14 @@ export function ProfileMenu({ user, onLogout, onOpenSettings, className }: Profi
     };
   }, [isOpen]);
 
-  // Get initials for avatar fallback
   const getInitials = (name: string) => {
     if (!name) return 'U';
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
+
+  // Extract username part from email (everything before @)
+  const getUsername = (email: string) => email ? email.split('@')[0] : '';
+  const getDomain = (email: string) => email ? '@' + email.split('@')[1] : '';
 
   return (
     <div className={`relative ${className}`} ref={menuRef}>
@@ -64,7 +63,7 @@ export function ProfileMenu({ user, onLogout, onOpenSettings, className }: Profi
         <div className="relative">
           <div className="w-9 h-9 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold text-sm shadow-lg ring-2 ring-slate-700 group-hover:ring-blue-500/50 transition-all duration-200">
             {user?.avatar ? (
-              <img src={user.avatar} alt={user.name || 'User'} className="w-full h-full rounded-full object-cover" />
+              <Image src={user.avatar} alt={user.name || 'User'} width={36} height={36} className="rounded-full object-cover" />
             ) : (
               getInitials(user?.name || 'User')
             )}
@@ -75,8 +74,13 @@ export function ProfileMenu({ user, onLogout, onOpenSettings, className }: Profi
 
         {/* User Info */}
         <div className="hidden md:flex flex-col items-start">
-          <span className="text-sm font-semibold text-white">{user?.name || 'User'}</span>
-          <span className="text-xs text-slate-400">{user?.email || ''}</span>
+          <div className="flex items-baseline gap-0.5">
+            <span className="text-sm font-bold text-white">{getUsername(user?.email || '') || user?.name || 'User'}</span>
+            <span className="text-xs text-blue-400">{getDomain(user?.email || '')}</span>
+          </div>
+          {user?.name && user.name !== getUsername(user?.email || '') && (
+            <span className="text-xs text-slate-400 truncate max-w-[120px]">{user.name}</span>
+          )}
         </div>
 
         {/* Dropdown Arrow */}
@@ -93,7 +97,7 @@ export function ProfileMenu({ user, onLogout, onOpenSettings, className }: Profi
               <div className="relative group/avatar">
                 <div className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
                   {user?.avatar ? (
-                    <img src={user.avatar} alt={user.name || 'User'} className="w-full h-full rounded-full object-cover" />
+                    <Image src={user.avatar} alt={user.name || 'User'} width={56} height={56} className="rounded-full object-cover" />
                   ) : (
                     getInitials(user?.name || 'User')
                   )}
@@ -106,17 +110,11 @@ export function ProfileMenu({ user, onLogout, onOpenSettings, className }: Profi
 
               {/* User Details */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-bold text-white truncate">{user?.name || 'User'}</h3>
-                <p className="text-sm text-slate-300 truncate">{user?.email || ''}</p>
-                {user?.profession && (
-                  <p className="text-xs text-slate-400 mt-1">{user.profession}</p>
-                )}
-                {user?.country && (
-                  <p className="text-xs text-slate-500 flex items-center mt-0.5">
-                    <span className="mr-1">📍</span>
-                    {user.country}
-                  </p>
-                )}
+                <div className="flex items-baseline gap-0.5">
+                  <h3 className="text-base font-bold text-white truncate">{getUsername(user?.email || '') || user?.name || 'User'}</h3>
+                  <span className="text-sm text-blue-400 shrink-0">{getDomain(user?.email || '')}</span>
+                </div>
+                {user?.name && <p className="text-xs text-slate-400 truncate">{user.name}</p>}
               </div>
             </div>
           </div>

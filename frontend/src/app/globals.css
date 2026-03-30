@@ -252,3 +252,31 @@
     @apply border-slate-600;
   }
 }
+
+/* HTML email body rendering */
+.mail-body-html {
+  color: #cbd5e1;
+  line-height: 1.7;
+  word-break: break-word;
+}
+.mail-body-html a { color: #60a5fa; text-decoration: underline; }
+.mail-body-html p, .mail-body-html div { margin-bottom: 0.5em; }
+.mail-body-html blockquote {
+  border-left: 3px solid #475569;
+  padding-left: 1em;
+  margin: 0.5em 0;
+  color: #94a3b8;
+}
+.mail-body-html pre, .mail-body-html code {
+  background: #1e293b;
+  border-radius: 4px;
+  padding: 0.2em 0.4em;
+  font-size: 0.9em;
+  color: #e2e8f0;
+}
+.mail-body-html img { max-width: 100%; height: auto; }
+.mail-body-html table { border-collapse: collapse; width: 100%; }
+.mail-body-html td, .mail-body-html th {
+  padding: 6px 10px;
+  border: 1px solid #334155;
+}

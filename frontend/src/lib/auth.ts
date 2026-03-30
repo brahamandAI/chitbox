@@ -63,7 +63,7 @@ export class AuthService {
 
       // Store token in localStorage
       if (response.token) {
-        localStorage.setItem('auth_token', response.token);
+        localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
       }
 
@@ -76,7 +76,7 @@ export class AuthService {
 
   async getCurrentUser(): Promise<User> {
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('No authentication token found');
       }

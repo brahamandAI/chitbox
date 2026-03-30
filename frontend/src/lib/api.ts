@@ -46,7 +46,11 @@ class ApiClient {
       
       if (!response.ok) {
         const error = await response.json().catch(() => ({ error: 'Network error' }));
-        throw new Error(error.error || 'Request failed');
+        // Surface specific validation details when available
+        const message = Array.isArray(error.details) && error.details.length > 0
+          ? error.details.join('\n')
+          : error.error || 'Request failed';
+        throw new Error(message);
       }
 
       return response.json();
@@ -185,6 +189,25 @@ class ApiClient {
     });
   }
 
+  async moveToTrash(threadId: number) {
+    return this.request(`/mail/threads/${threadId}/trash`, {
+      method: 'PATCH',
+    });
+  }
+
+  async markAsImportant(threadId: number, isImportant: boolean) {
+    return this.request(`/mail/threads/${threadId}/important`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isImportant }),
+    });
+  }
+
+  async markAsSpam(threadId: number) {
+    return this.request(`/mail/threads/${threadId}/spam`, {
+      method: 'PATCH',
+    });
+  }
+
   async deleteThread(threadId: number) {
     return this.request(`/mail/threads/${threadId}`, {
       method: 'DELETE',
@@ -282,6 +305,25 @@ class ApiClient {
 
   async getAIStatus() {
     return this.request('/ai/status');
+  }
+
+  async checkEmailAvailability(username: string): Promise<{ available: boolean; email?: string; reason?: string | null }> {
+    const params = new URLSearchParams({ username });
+    return this.request(`/auth/check-email?${params}`);
+  }
+
+  async updateProfile(data: { name?: string; profession?: string; country?: string }) {
+    return this.request('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async changePassword(currentPassword: string, newPassword: string) {
+    return this.request('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
   }
 
   async classifyEmail(emailContent: string, subject: string, sender: string) {

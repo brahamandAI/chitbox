@@ -480,6 +480,48 @@ router.post('/drafts', verifyToken, async (req: any, res) => {
   }
 });
 
+// Move thread to trash
+router.patch('/threads/:threadId/trash', verifyToken, async (req: any, res) => {
+  try {
+    const { threadId } = req.params;
+
+    const threadResult = await Database.query(
+      'SELECT id FROM mail_threads WHERE id = $1 AND user_id = $2',
+      [threadId, req.user.id]
+    );
+
+    if (threadResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Thread not found' });
+    }
+
+    // Find or create the trash folder for this user
+    let trashResult = await Database.query(
+      "SELECT id FROM folders WHERE user_id = $1 AND type = 'trash'",
+      [req.user.id]
+    );
+
+    let trashFolderId = trashResult.rows[0]?.id;
+
+    if (!trashFolderId) {
+      const newFolder = await Database.query(
+        "INSERT INTO folders (user_id, name, type) VALUES ($1, 'Trash', 'trash') RETURNING id",
+        [req.user.id]
+      );
+      trashFolderId = newFolder.rows[0].id;
+    }
+
+    await Database.query(
+      'UPDATE mail_threads SET folder_id = $1 WHERE id = $2 AND user_id = $3',
+      [trashFolderId, threadId, req.user.id]
+    );
+
+    res.json({ message: 'Thread moved to trash' });
+  } catch (error) {
+    console.error('Move to trash error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Delete thread (permanently)
 router.delete('/threads/:threadId', verifyToken, async (req: any, res) => {
   try {
@@ -522,6 +564,65 @@ router.patch('/threads/:threadId/read', verifyToken, async (req: any, res) => {
     res.json({ message: 'Thread updated successfully' });
   } catch (error) {
     console.error('Update thread error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Mark thread as important/not important
+router.patch('/threads/:threadId/important', verifyToken, async (req: any, res) => {
+  try {
+    const { threadId } = req.params;
+    const { isImportant } = req.body;
+
+    await Database.query(
+      'UPDATE mail_threads SET is_important = $1 WHERE id = $2 AND user_id = $3',
+      [isImportant, threadId, req.user.id]
+    );
+
+    res.json({ message: 'Thread updated successfully' });
+  } catch (error) {
+    console.error('Update thread error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Move thread to spam
+router.patch('/threads/:threadId/spam', verifyToken, async (req: any, res) => {
+  try {
+    const { threadId } = req.params;
+
+    const threadResult = await Database.query(
+      'SELECT id FROM mail_threads WHERE id = $1 AND user_id = $2',
+      [threadId, req.user.id]
+    );
+
+    if (threadResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Thread not found' });
+    }
+
+    let spamResult = await Database.query(
+      "SELECT id FROM folders WHERE user_id = $1 AND type = 'spam'",
+      [req.user.id]
+    );
+
+    let spamFolderId = spamResult.rows[0]?.id;
+
+    if (!spamFolderId) {
+      const newFolder = await Database.query(
+        "INSERT INTO folders (user_id, name, type) VALUES ($1, 'Spam', 'spam') RETURNING id",
+        [req.user.id]
+      );
+      spamFolderId = newFolder.rows[0].id;
+    }
+
+    await Database.query(
+      'UPDATE mail_threads SET folder_id = $1 WHERE id = $2 AND user_id = $3',
+      [spamFolderId, threadId, req.user.id]
+    );
+
+    res.json({ message: 'Thread moved to spam' });
+  } catch (error) {
+    console.error('Move to spam error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

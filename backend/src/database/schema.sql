@@ -87,10 +87,4 @@ CREATE INDEX IF NOT EXISTS idx_mail_messages_created_at ON mail_messages(created
 CREATE INDEX IF NOT EXISTS idx_attachments_message_id ON attachments(message_id);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON user_sessions(session_token);
 
--- Insert default folders for new users
-INSERT INTO folders (user_id, name, type) VALUES 
-(0, 'Inbox', 'inbox'),
-(0, 'Sent', 'sent'),
-(0, 'Drafts', 'drafts'),
-(0, 'Spam', 'spam'),
-(0, 'Trash', 'trash');
+-- Default folders are created per-user on registration (see auth route)

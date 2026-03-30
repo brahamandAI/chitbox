@@ -27,16 +27,15 @@ export class EmailQueueService {
   private processingInterval: NodeJS.Timeout | null = null;
 
   constructor() {
-    // Initialize SMTP transporter - use local Postfix with opportunistic TLS
+    // Initialize SMTP transporter - relay through local Postfix on port 25
+    // No auth or TLS needed for localhost relay
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'localhost',
       port: parseInt(process.env.SMTP_PORT || '25'),
-      secure: false, // Use STARTTLS instead of implicit TLS
-      requireTLS: true, // Upgrade to TLS when available
-      // No authentication needed for local Postfix
+      secure: false,
+      ignoreTLS: true, // localhost Postfix relay doesn't use STARTTLS
       tls: {
-        rejectUnauthorized: false,
-        ciphers: 'HIGH:!aNULL:!MD5'
+        rejectUnauthorized: false
       }
     });
   }
@@ -86,7 +85,6 @@ export class EmailQueueService {
     if (this.isProcessing) return;
     
     this.isProcessing = true;
-    console.log('🔄 Processing email queue...');
 
     try {
       // Get pending emails
@@ -99,8 +97,11 @@ export class EmailQueueService {
         LIMIT 10
       `);
 
-      for (const email of pendingEmails.rows) {
-        await this.processEmail(email);
+      if (pendingEmails.rows.length > 0) {
+        console.log(`🔄 Processing ${pendingEmails.rows.length} queued email(s)...`);
+        for (const email of pendingEmails.rows) {
+          await this.processEmail(email);
+        }
       }
     } catch (error) {
       console.error('Error processing email queue:', error);
@@ -219,10 +220,10 @@ export class EmailQueueService {
     // Process immediately on startup
     this.processQueue();
     
-    // Then process every 5 seconds for fast delivery
+    // Then check every 30 seconds
     this.processingInterval = setInterval(() => {
       this.processQueue();
-    }, 5000); // Process every 5 seconds for faster delivery
+    }, 30000);
   }
 
   // Stop queue processor

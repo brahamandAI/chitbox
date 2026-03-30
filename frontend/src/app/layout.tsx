@@ -17,9 +17,12 @@ export const metadata: Metadata = {
   title: "ChitBox - AI Mail Server",
   description: "Modern AI-powered email server with smart compose, CC/BCC, and intelligent email management",
   icons: {
-    icon: '/chitbox-logo.png',
-    apple: '/chitbox-logo.png',
-    shortcut: '/favicon.ico',
+    icon: [
+      { url: '/chitbox-logo.png', type: 'image/png', sizes: '512x512' },
+      { url: '/favicon.png',      type: 'image/png', sizes: '32x32' },
+    ],
+    shortcut: '/favicon.png',
+    apple: { url: '/chitbox-logo.png', sizes: '512x512', type: 'image/png' },
   },
   manifest: '/manifest.json',
 };

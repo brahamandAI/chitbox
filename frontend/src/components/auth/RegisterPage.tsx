@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -11,13 +11,17 @@ import {
   ArrowLeft,
   Sparkles,
   User,
-  Shield,
   Calendar,
   Briefcase,
-  Globe
+  Globe,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Info
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ChitboxLogo } from '@/components/ui/ChitboxLogo';
+import { apiClient } from '@/lib/api';
 
 interface RegisterPageProps {
   onRegister: (userData: RegisterFormData) => Promise<void>;
@@ -60,9 +64,63 @@ export function RegisterPage({
     country: '',
     newsletter: false
   });
+  const [emailUsername, setEmailUsername] = useState('');
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
+  const [emailStatusMsg, setEmailStatusMsg] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // Debounced email availability check
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    const username = emailUsername.trim().toLowerCase();
+    if (!username) {
+      setEmailStatus('idle');
+      setEmailStatusMsg('');
+      setFormData(prev => ({ ...prev, email: '' }));
+      return;
+    }
+
+    // Instant local format check
+    const validFormat = /^[a-z0-9._-]+$/.test(username);
+    if (!validFormat) {
+      setEmailStatus('invalid');
+      setEmailStatusMsg('Only letters, numbers, dots, hyphens, and underscores allowed');
+      setFormData(prev => ({ ...prev, email: '' }));
+      return;
+    }
+    if (username.length < 3) {
+      setEmailStatus('invalid');
+      setEmailStatusMsg('Username must be at least 3 characters');
+      setFormData(prev => ({ ...prev, email: '' }));
+      return;
+    }
+
+    setEmailStatus('checking');
+    setEmailStatusMsg('Checking availability…');
+
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const result = await apiClient.checkEmailAvailability(username);
+        if (result.available) {
+          setEmailStatus('available');
+          setEmailStatusMsg(`${result.email} is available`);
+          setFormData(prev => ({ ...prev, email: result.email! }));
+        } else {
+          setEmailStatus('taken');
+          setEmailStatusMsg(result.reason || 'This email is already registered');
+          setFormData(prev => ({ ...prev, email: '' }));
+        }
+      } catch {
+        setEmailStatus('idle');
+        setEmailStatusMsg('Could not check availability');
+      }
+    }, 500);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emailUsername]);
 
   const interestOptions = [
     'Technology', 'Business', 'Education', 'Healthcare', 'Entertainment',
@@ -91,10 +149,16 @@ export function RegisterPage({
         errors.name = 'Name must be at least 2 characters';
       }
 
-      if (!formData.email) {
-        errors.email = 'Email is required';
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        errors.email = 'Please enter a valid email address';
+      if (!emailUsername.trim()) {
+        errors.email = 'Email username is required';
+      } else if (emailStatus === 'invalid') {
+        errors.email = emailStatusMsg || 'Invalid username format';
+      } else if (emailStatus === 'taken') {
+        errors.email = emailStatusMsg || 'This email is already taken';
+      } else if (emailStatus === 'checking') {
+        errors.email = 'Please wait while we check availability';
+      } else if (emailStatus !== 'available' || !formData.email) {
+        errors.email = 'Please enter a valid username and wait for availability check';
       }
 
       if (!formData.password) {
@@ -215,9 +279,13 @@ export function RegisterPage({
           {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
-              <div className="flex items-center space-x-2">
-                <Shield className="w-5 h-5 text-red-400" />
-                <p className="text-red-400 text-sm">{error}</p>
+              <div className="flex items-start space-x-2">
+                <XCircle className="w-5 h-5 text-red-400 mt-0.5 shrink-0" />
+                <div className="text-red-400 text-sm space-y-1">
+                  {error.split('\n').map((line, i) => (
+                    <p key={i}>{line}</p>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -253,39 +321,77 @@ export function RegisterPage({
                   )}
                 </div>
 
-                {/* Email Field */}
+                {/* Email / Username Field */}
                 <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium text-slate-300">
-                    Email Address
+                  <label htmlFor="emailUsername" className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-slate-400" />
+                    ChitBox Email Address
                   </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <p className="text-xs text-slate-500 flex items-center gap-1">
+                    <Info className="w-3 h-3" />
+                    Only <span className="text-blue-400 font-medium">@chitbox.co</span> addresses are allowed — this is your unique inbox on ChitBox.
+                  </p>
+                  {/* Split input: [username]@chitbox.co */}
+                  <div className={cn(
+                    "flex items-stretch rounded-lg border overflow-hidden transition-colors",
+                    validationErrors.email
+                      ? "border-red-500"
+                      : emailStatus === 'available'
+                        ? "border-green-500"
+                        : emailStatus === 'taken' || emailStatus === 'invalid'
+                          ? "border-red-500"
+                          : "border-slate-600 focus-within:border-blue-500"
+                  )}>
+                    <div className="pl-3 flex items-center bg-slate-700/50 pointer-events-none">
                       <Mail className="w-5 h-5 text-slate-400" />
                     </div>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      placeholder="Enter your email"
-                      className={cn(
-                        "pl-10 bg-slate-700/50 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500/20",
-                        validationErrors.email && "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                      )}
+                    <input
+                      id="emailUsername"
+                      type="text"
+                      value={emailUsername}
+                      onChange={(e) => {
+                        setEmailUsername(e.target.value.toLowerCase().replace(/\s/g, ''));
+                        if (validationErrors.email) {
+                          setValidationErrors(prev => ({ ...prev, email: '' }));
+                        }
+                      }}
+                      placeholder="yourname"
+                      autoComplete="username"
+                      className="flex-1 min-w-0 px-3 py-3 bg-slate-700/50 text-white placeholder-slate-500 outline-none text-sm"
                     />
+                    <span className="px-3 flex items-center bg-slate-600/50 text-slate-300 text-sm font-medium whitespace-nowrap border-l border-slate-600 select-none">
+                      @chitbox.co
+                    </span>
+                    <div className="px-3 flex items-center bg-slate-700/50 border-l border-slate-600">
+                      {emailStatus === 'checking' && (
+                        <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+                      )}
+                      {emailStatus === 'available' && (
+                        <CheckCircle2 className="w-4 h-4 text-green-400" />
+                      )}
+                      {(emailStatus === 'taken' || emailStatus === 'invalid') && (
+                        <XCircle className="w-4 h-4 text-red-400" />
+                      )}
+                    </div>
                   </div>
+                  {/* Status message */}
+                  {emailUsername && emailStatusMsg && (
+                    <p className={cn("text-xs flex items-center gap-1", 
+                      emailStatus === 'available' ? "text-green-400" : 
+                      emailStatus === 'checking' ? "text-slate-400" : "text-red-400"
+                    )}>
+                      {emailStatus === 'available' && <CheckCircle2 className="w-3 h-3" />}
+                      {(emailStatus === 'taken' || emailStatus === 'invalid') && <XCircle className="w-3 h-3" />}
+                      {emailStatusMsg}
+                    </p>
+                  )}
                   {validationErrors.email && (
-                    <p className="text-red-400 text-xs">{validationErrors.email}</p>
+                    <p className="text-red-400 text-xs flex items-center gap-1">
+                      <XCircle className="w-3 h-3" />
+                      {validationErrors.email}
+                    </p>
                   )}
                 </div>
-
-                {/* Error Message */}
-                {error && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg flex items-center space-x-2">
-                    <div className="w-1 h-8 bg-red-500 rounded-full"></div>
-                    <p className="text-red-400 text-sm">{error}</p>
-                  </div>
-                )}
 
                 {/* Password Field */}
                 <div className="space-y-2">

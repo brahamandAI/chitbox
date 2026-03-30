@@ -10,7 +10,6 @@ import {
   AlertTriangle, 
   Star, 
   Plus,
-  Sparkles,
   Mail,
   Archive
 } from 'lucide-react';
@@ -22,8 +21,6 @@ interface SidebarProps {
   selectedFolderId: number | null;
   onFolderSelect: (folderId: number) => void;
   onComposeClick: () => void;
-  showPriorityInbox: boolean;
-  onPriorityInboxToggle: () => void;
   className?: string;
 }
 
@@ -32,8 +29,6 @@ export function Sidebar({
   selectedFolderId,
   onFolderSelect,
   onComposeClick,
-  showPriorityInbox,
-  onPriorityInboxToggle,
   className
 }: SidebarProps) {
   const getFolderIcon = (folderType: string) => {
@@ -67,22 +62,6 @@ export function Sidebar({
         >
           <Plus className="w-5 h-5 mr-2" />
           Compose
-        </Button>
-      </div>
-
-      {/* Priority Inbox Toggle */}
-      <div className="p-4 border-b border-slate-700">
-        <Button
-          onClick={onPriorityInboxToggle}
-          variant={showPriorityInbox ? "default" : "ghost"}
-          className={`w-full justify-start ${
-            showPriorityInbox 
-              ? "bg-yellow-600 hover:bg-yellow-700 text-white" 
-              : "text-slate-300 hover:bg-slate-700 hover:text-yellow-400"
-          }`}
-        >
-          <Sparkles className="w-5 h-5 mr-3" />
-          Priority Inbox
         </Button>
       </div>
 

@@ -37,6 +37,7 @@ interface ComposeMailV2Props {
     to?: string;
     subject?: string;
     body?: string;
+    initialBody?: string;
   } | null;
   className?: string;
 }
@@ -87,6 +88,7 @@ export function ComposeMailV2({
   // Form fields
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
+  const [quotedText, setQuotedText] = useState('');
   const [isSending, setIsSending] = useState(false);
 
   // Update form when replyTo changes
@@ -99,9 +101,9 @@ export function ComposeMailV2({
       if (replyTo.subject) {
         setSubject(replyTo.subject.startsWith('Re:') ? replyTo.subject : `Re: ${replyTo.subject}`);
       }
-      if (replyTo.body) {
-        setBody(`\n\n--- Original Message ---\n${replyTo.body}`);
-      }
+      // Pre-fill body with suggested reply text if provided, otherwise empty
+      setBody(replyTo.initialBody || '');
+      setQuotedText(replyTo.body || '');
     }
   }, [replyTo, recipients]);
 
@@ -275,8 +277,32 @@ export function ComposeMailV2({
     }
   };
 
+  const stripHtmlToText = (html: string): string => {
+    return html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<li>/gi, '• ')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  };
+
   const handleSend = async () => {
-    if (recipients.length === 0 || !subject || !body) return;
+    if (recipients.length === 0 || !subject || !stripHtmlToText(body).trim()) return;
+    const cleanComposeText = stripHtmlToText(body);
+    const cleanQuotedText = stripHtmlToText(quotedText);
+    const htmlBody = quotedText
+      ? `${body}<br/><br/><div style="color:#888;font-size:0.85em;border-left:3px solid #475569;padding-left:12px">${cleanQuotedText.replace(/\n/g, '<br/>')}</div>`
+      : body;
+    const textBody = cleanQuotedText
+      ? `${cleanComposeText}\n\n${cleanQuotedText}`
+      : cleanComposeText;
     
     setIsSending(true);
     try {
@@ -308,7 +334,7 @@ export function ComposeMailV2({
         cc: ccRecipients.length > 0 ? ccRecipients : undefined,
         bcc: bccRecipients.length > 0 ? bccRecipients : undefined,
         subject,
-        body,
+        body: { text: textBody, html: htmlBody },
         attachments: processedAttachments
       });
       
@@ -318,6 +344,7 @@ export function ComposeMailV2({
       setBccRecipients([]);
       setSubject('');
       setBody('');
+      setQuotedText('');
       setAttachments([]);
       setCurrentRecipient('');
       setCurrentCcRecipient('');
@@ -694,6 +721,13 @@ export function ComposeMailV2({
               placeholder="Write your message here..."
               className="w-full h-full"
             />
+            {quotedText && (
+              <div className="mt-4 border-l-2 border-slate-600 pl-3">
+                <pre className="text-xs text-slate-500 whitespace-pre-wrap font-sans leading-relaxed">
+                  {stripHtmlToText(quotedText)}
+                </pre>
+              </div>
+            )}
           </div>
 
           {/* Toolbar */}

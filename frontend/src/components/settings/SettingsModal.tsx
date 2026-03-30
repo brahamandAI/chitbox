@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { apiClient } from '@/lib/api';
 import { 
   X, 
   User, 
@@ -32,6 +33,7 @@ interface SettingsModalProps {
     profession?: string;
     country?: string;
   } | null;
+  onUserUpdate?: (updated: { name: string; profession: string; country: string }) => void;
   className?: string;
 }
 
@@ -39,6 +41,7 @@ export function SettingsModal({
   isOpen,
   onClose,
   user,
+  onUserUpdate,
   className
 }: SettingsModalProps) {
   const { theme, toggleTheme } = useTheme();
@@ -46,19 +49,29 @@ export function SettingsModal({
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   // Profile form states
   const [name, setName] = useState(user?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
   const [profession, setProfession] = useState(user?.profession || '');
   const [country, setCountry] = useState(user?.country || '');
-  
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [profileSuccess, setProfileSuccess] = useState('');
+
+  // Sync form when user prop changes (e.g. modal re-opened)
+  useEffect(() => {
+    setName(user?.name || '');
+    setProfession(user?.profession || '');
+    setCountry(user?.country || '');
+  }, [user, isOpen]);
+
   // Password change states
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
@@ -69,36 +82,51 @@ export function SettingsModal({
     { id: 'privacy', label: 'Privacy', icon: Lock }
   ];
 
+  const handleProfileSave = async () => {
+    setProfileError('');
+    setProfileSuccess('');
+    if (!name.trim() || name.trim().length < 2) {
+      setProfileError('Name must be at least 2 characters');
+      return;
+    }
+    setProfileSaving(true);
+    try {
+      await apiClient.updateProfile({ name: name.trim(), profession, country });
+      setProfileSuccess('Profile updated successfully!');
+      onUserUpdate?.({ name: name.trim(), profession, country });
+      setTimeout(() => setProfileSuccess(''), 3000);
+    } catch (error: unknown) {
+      setProfileError(error instanceof Error ? error.message : 'Failed to update profile');
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
   const handlePasswordChange = async () => {
     setPasswordError('');
     setPasswordSuccess('');
 
-    // Validate passwords
     if (!currentPassword || !newPassword || !confirmPassword) {
       setPasswordError('All fields are required');
       return;
     }
-
     if (newPassword !== confirmPassword) {
       setPasswordError('New passwords do not match');
       return;
     }
 
-    if (newPassword.length < 8) {
-      setPasswordError('New password must be at least 8 characters');
-      return;
-    }
-
+    setPasswordSaving(true);
     try {
-      // TODO: Add API call to change password
-      // const response = await apiClient.changePassword(currentPassword, newPassword);
-      setPasswordSuccess('Password changed successfully!');
+      await apiClient.changePassword(currentPassword, newPassword);
+      setPasswordSuccess('Password changed successfully! Other sessions have been logged out.');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-    } catch (error) {
-      console.error('Password change error:', error);
-      setPasswordError('Failed to change password. Please check your current password.');
+      setTimeout(() => setPasswordSuccess(''), 5000);
+    } catch (error: unknown) {
+      setPasswordError(error instanceof Error ? error.message : 'Failed to change password. Check your current password.');
+    } finally {
+      setPasswordSaving(false);
     }
   };
 
@@ -153,27 +181,36 @@ export function SettingsModal({
             {activeTab === 'profile' && (
               <div className="space-y-6">
                 <h3 className="text-xl font-semibold text-white">Profile Information</h3>
-                
+
+                {profileError && (
+                  <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
+                    <p className="text-sm text-red-400">{profileError}</p>
+                  </div>
+                )}
+                {profileSuccess && (
+                  <div className="p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
+                    <p className="text-sm text-green-400 flex items-center gap-2"><Check className="w-4 h-4" />{profileSuccess}</p>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
                   <Input
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => { setName(e.target.value); setProfileError(''); }}
                     placeholder="Enter your name"
                     className="bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Email Address</label>
                   <Input
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your.email@example.com"
+                    value={user?.email || ''}
                     disabled
-                    className="bg-slate-700 border-slate-600 text-slate-400 placeholder-slate-400 cursor-not-allowed"
+                    className="bg-slate-700/50 border-slate-700 text-slate-400 cursor-not-allowed"
                   />
-                  <p className="text-xs text-slate-500 mt-1">Email cannot be changed</p>
+                  <p className="text-xs text-slate-500 mt-1">Your ChitBox email address cannot be changed</p>
                 </div>
 
                 <div>
@@ -196,9 +233,16 @@ export function SettingsModal({
                   />
                 </div>
 
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Changes
+                <Button
+                  onClick={handleProfileSave}
+                  disabled={profileSaving}
+                  className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60"
+                >
+                  {profileSaving ? (
+                    <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Saving…</>
+                  ) : (
+                    <><Save className="w-4 h-4 mr-2" />Save Changes</>
+                  )}
                 </Button>
               </div>
             )}
@@ -322,12 +366,16 @@ export function SettingsModal({
                   </div>
                 </div>
 
-                <Button 
+                <Button
                   onClick={handlePasswordChange}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={passwordSaving}
+                  className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60"
                 >
-                  <Check className="w-4 h-4 mr-2" />
-                  Update Password
+                  {passwordSaving ? (
+                    <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Updating…</>
+                  ) : (
+                    <><Check className="w-4 h-4 mr-2" />Update Password</>
+                  )}
                 </Button>
               </div>
             )}

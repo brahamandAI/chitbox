@@ -1,23 +1,29 @@
 import { Request, Response, NextFunction } from 'express';
 
+// Keys whose values are allowed to contain HTML (must not have < > stripped)
+const HTML_ALLOWED_KEYS = new Set(['html', 'body_html', 'bodyHtml', 'body_text', 'bodyText', 'text']);
+
 // Input sanitization
 export const sanitizeInput = (req: Request, res: Response, next: NextFunction) => {
-  const sanitizeString = (str: string): string => {
+  const sanitizeString = (str: string, allowHtml = false): string => {
     if (typeof str !== 'string') return str;
+    if (allowHtml) return str; // preserve HTML content as-is
+    // Only strip angle brackets for non-HTML fields (names, emails, subjects, etc.)
     return str.trim().replace(/[<>]/g, '');
   };
 
-  const sanitizeObject = (obj: any): any => {
+  const sanitizeObject = (obj: any, parentKey?: string): any => {
+    const allowHtml = parentKey !== undefined && HTML_ALLOWED_KEYS.has(parentKey);
     if (typeof obj === 'string') {
-      return sanitizeString(obj);
+      return sanitizeString(obj, allowHtml);
     }
     if (Array.isArray(obj)) {
-      return obj.map(sanitizeObject);
+      return obj.map((item) => sanitizeObject(item, parentKey));
     }
     if (obj && typeof obj === 'object') {
       const sanitized: any = {};
       for (const key in obj) {
-        sanitized[key] = sanitizeObject(obj[key]);
+        sanitized[key] = sanitizeObject(obj[key], key);
       }
       return sanitized;
     }

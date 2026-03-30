@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { 
   ArrowLeft, 
@@ -15,7 +15,11 @@ import {
   Download,
   Image as ImageIcon,
   FileText,
-  Sparkles
+  Sparkles,
+  AlertTriangle,
+  Trash2,
+  Star,
+  BookmarkCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MailMessage } from '@/types';
@@ -27,6 +31,11 @@ interface MailBodyProps {
   onForward: (message: MailMessage) => void;
   onStarToggle: (messageId: number) => void;
   onBack: () => void;
+  onMarkAsImportant?: (threadId: number, important: boolean) => void;
+  onMarkAsSpam?: (threadId: number) => void;
+  onMoveToTrash?: (threadId: number) => void;
+  onSuggestedReply?: (message: MailMessage, text: string) => void;
+  isImportant?: boolean;
   className?: string;
 }
 
@@ -36,8 +45,25 @@ export function MailBody({
   onForward,
   onStarToggle,
   onBack,
+  onMarkAsImportant,
+  onMarkAsSpam,
+  onMoveToTrash,
+  onSuggestedReply,
+  isImportant = false,
   className
 }: MailBodyProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    if (menuOpen) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
 
   const formatTime = (timestamp: string) => {
     if (!timestamp) return 'Just now';
@@ -112,13 +138,62 @@ export function MailBody({
             >
               <StarOff className="w-4 h-4" />
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-slate-400 hover:text-slate-300 hover:bg-slate-700"
-            >
-              <MoreVertical className="w-4 h-4" />
-            </Button>
+            <div className="relative" ref={menuRef}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="text-slate-400 hover:text-slate-300 hover:bg-slate-700"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+              {menuOpen && (
+                <div className="absolute right-0 top-8 w-52 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+                  <button
+                    onClick={() => {
+                      onMarkAsImportant?.(message.threadId, !isImportant);
+                      setMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+                  >
+                    <BookmarkCheck className="w-4 h-4 text-yellow-400" />
+                    {isImportant ? 'Remove Important' : 'Mark as Important'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      onStarToggle(message.id);
+                      setMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+                  >
+                    <Star className="w-4 h-4 text-yellow-400" />
+                    Star this email
+                  </button>
+                  <button
+                    onClick={() => {
+                      onMarkAsSpam?.(message.threadId);
+                      setMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-slate-700 hover:text-orange-400 transition-colors"
+                  >
+                    <AlertTriangle className="w-4 h-4 text-orange-400" />
+                    Report as Spam
+                  </button>
+                  <div className="border-t border-slate-700" />
+                  <button
+                    onClick={() => {
+                      onMoveToTrash?.(message.threadId);
+                      onBack();
+                      setMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-red-900/30 hover:text-red-400 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-400" />
+                    Move to Trash
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -180,10 +255,8 @@ export function MailBody({
                           : (message.fromEmail || 'Unknown'))
                     }
                   </span>
-                  {!message.isRead && (
-                    <span className="px-2 py-1 text-xs font-bold text-white bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 rounded-full shadow-lg">
-                      NEW
-                    </span>
+                  {isImportant && (
+                    <span className="px-2 py-0.5 text-xs font-semibold text-yellow-200 bg-yellow-600/50 rounded-full">Important</span>
                   )}
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-slate-400">
@@ -197,15 +270,26 @@ export function MailBody({
           {/* Email Body */}
           <div className="prose prose-sm max-w-none mb-6">
             <div className="text-slate-300 leading-relaxed">
-              {message.bodyText && message.bodyText.trim() ? (
-                <div className="whitespace-pre-wrap">{message.bodyText}</div>
-              ) : message.bodyHtml ? (
-                <div 
-                  className="prose-invert"
-                  dangerouslySetInnerHTML={{ 
-                    __html: message.bodyHtml.replace(/<[^>]*>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
-                  }} 
+              {message.bodyHtml && message.bodyHtml.trim() ? (
+                <div
+                  className="mail-body-html"
+                  dangerouslySetInnerHTML={{ __html: message.bodyHtml }}
                 />
+              ) : message.bodyText && message.bodyText.trim() ? (
+                (() => {
+                  // If bodyText looks like HTML (legacy stored HTML), strip tags for plain display
+                  const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(message.bodyText);
+                  const displayText = looksLikeHtml
+                    ? message.bodyText
+                        .replace(/<br\s*\/?>/gi, '\n')
+                        .replace(/<\/p>/gi, '\n')
+                        .replace(/<\/div>/gi, '\n')
+                        .replace(/<[^>]*>/g, '')
+                        .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
+                        .trim()
+                    : message.bodyText;
+                  return <div className="whitespace-pre-wrap">{displayText}</div>;
+                })()
               ) : (
                 <div className="text-slate-400 italic text-center py-8 bg-slate-700/30 rounded-lg">
                   <p>No content available</p>
@@ -266,20 +350,21 @@ export function MailBody({
         </div>
 
         {/* Suggested Replies Section */}
-        <div className="mt-6">
-          <div className="flex items-center space-x-2 mb-4">
-            <Sparkles className="w-5 h-5 text-purple-400" />
-            <h3 className="text-lg font-semibold text-white">Suggested Replies</h3>
+        {onSuggestedReply && (
+          <div className="mt-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <Sparkles className="w-5 h-5 text-purple-400" />
+              <h3 className="text-base font-semibold text-white">Quick Replies</h3>
+            </div>
+            <SuggestedReplies 
+              emailContent={message.bodyText || message.bodyHtml || ''}
+              senderName={message.fromName || message.fromEmail}
+              onReplySelect={(reply: string) => {
+                onSuggestedReply(message, reply);
+              }}
+            />
           </div>
-          <SuggestedReplies 
-            emailContent={message.bodyText || message.bodyHtml || ''}
-            senderName={message.fromName || message.fromEmail}
-            onReplySelect={(reply: string) => {
-              // Handle suggested reply selection
-              console.log('Selected reply:', reply);
-            }}
-          />
-        </div>
+        )}
       </div>
     </div>
   );
@@ -369,21 +454,16 @@ function SuggestedReplies({ emailContent, senderName, onReplySelect }: Suggested
   }
 
   return (
-    <div className="grid grid-cols-1 gap-3">
+    <div className="flex flex-wrap gap-2">
       {suggestions.map((reply, index) => (
         <button
           key={index}
           onClick={() => onReplySelect(reply)}
-          className="p-4 text-left bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 hover:border-purple-500 transition-all duration-200 group"
+          className="flex items-center gap-2 px-4 py-2 text-sm text-left bg-slate-700/60 hover:bg-purple-600/30 border border-slate-600 hover:border-purple-500 rounded-full transition-all duration-150 group"
+          title="Click to reply with this text"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-slate-300 group-hover:text-white transition-colors">
-              {reply}
-            </span>
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-              <Reply className="w-4 h-4 text-purple-400" />
-            </div>
-          </div>
+          <Reply className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+          <span className="text-slate-300 group-hover:text-white transition-colors">{reply}</span>
         </button>
       ))}
     </div>

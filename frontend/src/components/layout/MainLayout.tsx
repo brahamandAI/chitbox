@@ -8,7 +8,6 @@ import { MailList } from '../mail/MailList';
 import { MailBody } from '../mail/MailBody';
 import { AIAssistant } from '../ai/AIAssistant';
 import { ComposeMailV2 } from '../mail/ComposeMailV2';
-import { PriorityInbox } from '../ai/PriorityInbox';
 import { SettingsModal } from '../settings/SettingsModal';
 import { Folder, MailThread as MailThreadType, MailMessage, SendEmailRequest } from '@/types';
 import { apiClient } from '@/lib/api';
@@ -36,8 +35,8 @@ export function MainLayout({ token, onLogout, demoFolders, demoThreads, classNam
   const [messages, setMessages] = useState<MailMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isComposeOpen, setIsComposeOpen] = useState(false);
-  const [replyTo, setReplyTo] = useState<{to: string; subject: string; body: string} | null>(null);
-  const [showPriorityInbox, setShowPriorityInbox] = useState(false);
+  const [replyTo, setReplyTo] = useState<{to: string; subject: string; body?: string; initialBody?: string} | null>(null);
+  const [importantThreadIds, setImportantThreadIds] = useState<Set<number>>(new Set());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showChitAI, setShowChitAI] = useState(false);
   const [currentUser, setCurrentUser] = useState<{
@@ -60,14 +59,10 @@ export function MainLayout({ token, onLogout, demoFolders, demoThreads, classNam
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const userData = await apiClient.getCurrentUser() as {
-          id: number;
-          name: string;
-          email: string;
-          avatar?: string;
-          profession?: string;
-          country?: string;
-        };
+        type UserData = { id: number; name: string; email: string; avatar?: string; profession?: string; country?: string; };
+        const response = await apiClient.getCurrentUser() as { user?: UserData } & UserData;
+        // Backend returns { user: {...} } — unwrap it
+        const userData = (response.user || response) as UserData;
         setCurrentUser(userData);
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -377,23 +372,76 @@ export function MainLayout({ token, onLogout, demoFolders, demoThreads, classNam
   };
 
 
-  const handleReply = (message: MailMessage) => {
+  const stripHtml = (html: string): string => {
+    if (!html) return '';
+    return html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<li>/gi, '• ')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  };
+
+  const getCleanBodyText = (msg: MailMessage): string => {
+    // Use bodyText if it's clean plain text, otherwise strip from bodyHtml or bodyText
+    const raw = msg.bodyText || msg.bodyHtml || '';
+    const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(raw);
+    return looksLikeHtml ? stripHtml(raw) : raw;
+  };
+
+  const handleReply = (message: MailMessage, initialBody?: string) => {
+    const cleanBody = getCleanBodyText(message);
     setReplyTo({
       to: message.fromEmail,
-      subject: `Re: ${message.subject}`,
-      body: `\n\n--- Original Message ---\nFrom: ${message.fromName || message.fromEmail}\nDate: ${new Date(message.createdAt).toLocaleString()}\n${message.ccEmails && message.ccEmails.length > 0 ? `Cc: ${message.ccEmails.join(', ')}\n` : ''}${message.bccEmails && message.bccEmails.length > 0 ? `Bcc: ${message.bccEmails.join(', ')}\n` : ''}\n${message.bodyText}`
+      subject: message.subject?.startsWith('Re:') ? message.subject : `Re: ${message.subject}`,
+      body: `--- Original Message ---\nFrom: ${message.fromName || message.fromEmail}\nDate: ${new Date(message.createdAt).toLocaleString()}\n\n${cleanBody}`,
+      initialBody: initialBody || '',
     });
     setIsComposeOpen(true);
   };
 
-
   const handleForward = (message: MailMessage) => {
+    const cleanBody = getCleanBodyText(message);
     setReplyTo({
       to: '',
       subject: `Fwd: ${message.subject}`,
-      body: `\n\n--- Forwarded Message ---\nFrom: ${message.fromName || message.fromEmail}\nDate: ${new Date(message.createdAt).toLocaleString()}\n${message.ccEmails && message.ccEmails.length > 0 ? `Cc: ${message.ccEmails.join(', ')}\n` : ''}${message.bccEmails && message.bccEmails.length > 0 ? `Bcc: ${message.bccEmails.join(', ')}\n` : ''}\n${message.bodyText}`
+      body: `--- Forwarded Message ---\nFrom: ${message.fromName || message.fromEmail}\nDate: ${new Date(message.createdAt).toLocaleString()}\n\n${cleanBody}`,
+      initialBody: '',
     });
     setIsComposeOpen(true);
+  };
+
+  const handleSuggestedReply = (message: MailMessage, text: string) => {
+    handleReply(message, text);
+  };
+
+  const handleMarkAsImportant = async (threadId: number, important: boolean) => {
+    try {
+      await apiClient.markAsImportant(threadId, important);
+      setImportantThreadIds(prev => {
+        const next = new Set(prev);
+        if (important) { next.add(threadId); } else { next.delete(threadId); }
+        return next;
+      });
+    } catch (error) {
+      console.error('Error marking as important:', error);
+    }
+  };
+
+  const handleMarkAsSpam = async (threadId: number) => {
+    try {
+      await apiClient.markAsSpam(threadId);
+      showNotification('Moved to Spam', 'success');
+      if (selectedFolderId) loadThreads(selectedFolderId);
+      if (selectedThreadId === threadId) { setSelectedThreadId(null); setMessages([]); }
+    } catch (error) {
+      console.error('Error marking as spam:', error);
+      showNotification('Failed to mark as spam', 'error');
+    }
   };
 
   const handleRefresh = () => {
@@ -402,48 +450,36 @@ export function MainLayout({ token, onLogout, demoFolders, demoThreads, classNam
     }
   };
 
+  const showNotification = (message: string, type: 'success' | 'error') => {
+    if (typeof window === 'undefined') return;
+    const el = document.createElement('div');
+    el.className = `fixed top-4 right-4 z-50 ${type === 'success' ? 'bg-slate-700 border border-slate-600' : 'bg-red-900/80 border border-red-700'} text-white px-4 py-2 rounded-lg shadow-lg text-sm`;
+    el.textContent = message;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  };
+
+  const handleMoveToTrash = async (threadId: number) => {
+    try {
+      await apiClient.moveToTrash(threadId);
+      showNotification('Moved to Trash', 'success');
+      if (selectedFolderId) loadThreads(selectedFolderId);
+      if (selectedThreadId === threadId) { setSelectedThreadId(null); setMessages([]); }
+    } catch (error) {
+      console.error('Error moving to trash:', error);
+      showNotification('Failed to move to trash', 'error');
+    }
+  };
+
   const handleDelete = async (threadId: number) => {
     try {
       await apiClient.deleteThread(threadId);
-      console.log('Thread deleted successfully');
-      
-      // Show success notification
-      if (typeof window !== 'undefined') {
-        const notification = document.createElement('div');
-        notification.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg';
-        notification.textContent = 'Email deleted successfully!';
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-          notification.remove();
-        }, 3000);
-      }
-      
-      // Refresh threads to remove deleted thread
-      if (selectedFolderId) {
-        loadThreads(selectedFolderId);
-      }
-      
-      // If the deleted thread was selected, clear the selection
-      if (selectedThreadId === threadId) {
-        setSelectedThreadId(null);
-        setMessages([]);
-      }
-      
+      showNotification('Email permanently deleted', 'success');
+      if (selectedFolderId) loadThreads(selectedFolderId);
+      if (selectedThreadId === threadId) { setSelectedThreadId(null); setMessages([]); }
     } catch (error) {
       console.error('Error deleting thread:', error);
-      
-      // Show error notification
-      if (typeof window !== 'undefined') {
-        const notification = document.createElement('div');
-        notification.className = 'fixed top-4 right-4 z-50 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg';
-        notification.textContent = 'Failed to delete email. Please try again.';
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-          notification.remove();
-        }, 3000);
-      }
+      showNotification('Failed to delete email', 'error');
     }
   };
 
@@ -467,8 +503,6 @@ export function MainLayout({ token, onLogout, demoFolders, demoThreads, classNam
             selectedFolderId={selectedFolderId}
             onFolderSelect={handleFolderSelect}
             onComposeClick={() => setIsComposeOpen(true)}
-            showPriorityInbox={showPriorityInbox}
-            onPriorityInboxToggle={() => setShowPriorityInbox(!showPriorityInbox)}
           />
         </div>
 
@@ -477,24 +511,17 @@ export function MainLayout({ token, onLogout, demoFolders, demoThreads, classNam
           {!selectedThreadId ? (
             /* Default: Two sections - Sidebar + Mail List (full width) */
             <div className="w-full border-r border-slate-700 main-content h-full overflow-hidden">
-              {showPriorityInbox ? (
-                <PriorityInbox
-                  threads={threads}
-                  onThreadSelect={handleThreadSelect}
-                  onStarToggle={handleStarToggle}
-                  onMarkAsRead={handleMarkAsRead}
-                />
-              ) : (
-                <MailList
-                  threads={threads}
-                  isLoading={isLoading}
-                  onThreadSelect={handleThreadSelect}
-                  onStarToggle={handleStarToggle}
-                  onMarkAsRead={handleMarkAsRead}
-                  onDelete={handleDelete}
-                  onRefresh={handleRefresh}
-                />
-              )}
+              <MailList
+                threads={threads}
+                isLoading={isLoading}
+                onThreadSelect={handleThreadSelect}
+                onStarToggle={handleStarToggle}
+                onMarkAsRead={handleMarkAsRead}
+                onMoveToTrash={handleMoveToTrash}
+                onDelete={handleDelete}
+                onRefresh={handleRefresh}
+                isTrashFolder={folders.find(f => f.id === selectedFolderId)?.type === 'trash'}
+              />
             </div>
           ) : (
             /* Email Selected: Sidebar + Email Body (full width) OR Sidebar + Email Body + Chit AI */
@@ -509,6 +536,11 @@ export function MainLayout({ token, onLogout, demoFolders, demoThreads, classNam
                     onStarToggle={handleStarToggle}
                     onReply={handleReply}
                     onForward={handleForward}
+                    onSuggestedReply={handleSuggestedReply}
+                    onMarkAsImportant={handleMarkAsImportant}
+                    onMarkAsSpam={handleMarkAsSpam}
+                    onMoveToTrash={handleMoveToTrash}
+                    isImportant={selectedThreadId ? importantThreadIds.has(selectedThreadId) : false}
                     onBack={() => {
                       setSelectedThreadId(null);
                       setShowChitAI(false);
